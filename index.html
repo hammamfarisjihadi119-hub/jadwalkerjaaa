@@ -99,10 +99,15 @@
           const [tampilkanModal, setTampilkanModal] = useState(false)
           const [tampilkanFilterModal, setTampilkanFilterModal] = useState(false)
           
-          // State baru untuk filter range bulan-tahun yang lebih sederhana
+          // State untuk filter range bulan-tahun
           const [filterTahun, setFilterTahun] = useState(2026)
-          const [filterBulanMulai, setFilterBulanMulai] = useState(0) // 0 = Januari
-          const [filterBulanSelesai, setFilterBulanSelesai] = useState(11) // 11 = Desember
+          const [filterBulanMulai, setFilterBulanMulai] = useState(0)
+          const [filterBulanSelesai, setFilterBulanSelesai] = useState(11)
+          
+          // State temporary untuk modal filter range
+          const [tempFilterTahun, setTempFilterTahun] = useState(2026)
+          const [tempFilterBulanMulai, setTempFilterBulanMulai] = useState(0)
+          const [tempFilterBulanSelesai, setTempFilterBulanSelesai] = useState(11)
           const [tampilkanFilterRangeModal, setTampilkanFilterRangeModal] = useState(false)
 
           const [sudahTercatat, setSudahTercatat] = useState(false)
@@ -202,7 +207,7 @@
             return { total, pagi, sore, long, rincian }
           }
 
-          // Perhitungan Filter Range Bulan (sederhana)
+          // Perhitungan Filter Range Bulan
           const hitungGajiRangeBulan = (tahun, bulanMulai, bulanSelesai) => {
             let total = 0
             let pagi = 0
@@ -351,16 +356,22 @@
 
           // Fungsi untuk membuka modal filter range
           const bukaModalFilterRange = () => {
+            setTempFilterTahun(filterTahun)
+            setTempFilterBulanMulai(filterBulanMulai)
+            setTempFilterBulanSelesai(filterBulanSelesai)
             setTampilkanFilterRangeModal(true)
           }
 
           const terapkanFilterRange = () => {
-            if (filterBulanMulai > filterBulanSelesai) {
+            if (tempFilterBulanMulai > tempFilterBulanSelesai) {
               pemicuNotifikasi("Bulan mulai harus kurang dari atau sama dengan bulan selesai!")
               return
             }
+            setFilterTahun(tempFilterTahun)
+            setFilterBulanMulai(tempFilterBulanMulai)
+            setFilterBulanSelesai(tempFilterBulanSelesai)
             setTampilkanFilterRangeModal(false)
-            pemicuNotifikasi(`Filter diterapkan: ${daftarBulan[filterBulanMulai]} - ${daftarBulan[filterBulanSelesai]} ${filterTahun}`)
+            pemicuNotifikasi(`Filter diterapkan: ${daftarBulan[tempFilterBulanMulai]} - ${daftarBulan[tempFilterBulanSelesai]} ${tempFilterTahun}`)
           }
 
           const eksporData = () => {
@@ -1032,7 +1043,7 @@ Total Gaji: Rp ${murni.total.toLocaleString('id-ID')}`
                 </div>
               )}
 
-              {/* MODAL FILTER RANGE BULAN-TAHUN YANG DISEDERHANAKAN */}
+              {/* MODAL FILTER RANGE BULAN-TAHUN */}
               {tampilkanFilterRangeModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                   <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-stone-200">
@@ -1046,8 +1057,8 @@ Total Gaji: Rp ${murni.total.toLocaleString('id-ID')}`
                       <div>
                         <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">Pilih Tahun</label>
                         <select 
-                          value={filterTahun}
-                          onChange={(e) => setFilterTahun(parseInt(e.target.value))}
+                          value={tempFilterTahun}
+                          onChange={(e) => setTempFilterTahun(parseInt(e.target.value))}
                           className="w-full p-2.5 border border-stone-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
                         >
                           {daftarTahun.map(thn => (
@@ -1060,8 +1071,8 @@ Total Gaji: Rp ${murni.total.toLocaleString('id-ID')}`
                       <div>
                         <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">Bulan Mulai</label>
                         <select 
-                          value={filterBulanMulai}
-                          onChange={(e) => setFilterBulanMulai(parseInt(e.target.value))}
+                          value={tempFilterBulanMulai}
+                          onChange={(e) => setTempFilterBulanMulai(parseInt(e.target.value))}
                           className="w-full p-2.5 border border-stone-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
                         >
                           {daftarBulan.map((bln, idx) => (
@@ -1074,8 +1085,8 @@ Total Gaji: Rp ${murni.total.toLocaleString('id-ID')}`
                       <div>
                         <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">Bulan Selesai</label>
                         <select 
-                          value={filterBulanSelesai}
-                          onChange={(e) => setFilterBulanSelesai(parseInt(e.target.value))}
+                          value={tempFilterBulanSelesai}
+                          onChange={(e) => setTempFilterBulanSelesai(parseInt(e.target.value))}
                           className="w-full p-2.5 border border-stone-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
                         >
                           {daftarBulan.map((bln, idx) => (
@@ -1086,7 +1097,7 @@ Total Gaji: Rp ${murni.total.toLocaleString('id-ID')}`
 
                       {/* Preview Range */}
                       <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs text-amber-900 text-center">
-                        <span className="font-bold">Range terpilih:</span> {daftarBulan[filterBulanMulai]} - {daftarBulan[filterBulanSelesai]} {filterTahun}
+                        <span className="font-bold">Range terpilih:</span> {daftarBulan[tempFilterBulanMulai]} - {daftarBulan[tempFilterBulanSelesai]} {tempFilterTahun}
                       </div>
                     </div>
 
