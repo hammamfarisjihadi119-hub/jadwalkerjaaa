@@ -104,11 +104,12 @@
           const [filterBulanMulai, setFilterBulanMulai] = useState(0)
           const [filterBulanSelesai, setFilterBulanSelesai] = useState(11)
           
-          // State temporary untuk modal filter range
+          // State untuk modal filter range
+          const [tampilkanFilterRangeModal, setTampilkanFilterRangeModal] = useState(false)
+          const [stepFilterRange, setStepFilterRange] = useState('tahun') // 'tahun', 'bulanMulai', 'bulanSelesai'
           const [tempFilterTahun, setTempFilterTahun] = useState(2026)
           const [tempFilterBulanMulai, setTempFilterBulanMulai] = useState(0)
           const [tempFilterBulanSelesai, setTempFilterBulanSelesai] = useState(11)
-          const [tampilkanFilterRangeModal, setTampilkanFilterRangeModal] = useState(false)
 
           const [sudahTercatat, setSudahTercatat] = useState(false)
           const [tampilkanKonfirmasiHapus, setTampilkanKonfirmasiHapus] = useState(false)
@@ -359,19 +360,32 @@
             setTempFilterTahun(filterTahun)
             setTempFilterBulanMulai(filterBulanMulai)
             setTempFilterBulanSelesai(filterBulanSelesai)
+            setStepFilterRange('tahun')
             setTampilkanFilterRangeModal(true)
           }
 
-          const terapkanFilterRange = () => {
-            if (tempFilterBulanMulai > tempFilterBulanSelesai) {
-              pemicuNotifikasi("Bulan mulai harus kurang dari atau sama dengan bulan selesai!")
+          const pilihTahunFilter = (tahun) => {
+            setTempFilterTahun(tahun)
+            setStepFilterRange('bulanMulai')
+          }
+
+          const pilihBulanMulaiFilter = (bulan) => {
+            setTempFilterBulanMulai(bulan)
+            setStepFilterRange('bulanSelesai')
+          }
+
+          const pilihBulanSelesaiFilter = (bulan) => {
+            if (bulan < tempFilterBulanMulai) {
+              pemicuNotifikasi("Bulan selesai harus lebih besar dari bulan mulai!")
               return
             }
+            setTempFilterBulanSelesai(bulan)
+            // Terapkan filter
             setFilterTahun(tempFilterTahun)
             setFilterBulanMulai(tempFilterBulanMulai)
-            setFilterBulanSelesai(tempFilterBulanSelesai)
+            setFilterBulanSelesai(bulan)
             setTampilkanFilterRangeModal(false)
-            pemicuNotifikasi(`Filter diterapkan: ${daftarBulan[tempFilterBulanMulai]} - ${daftarBulan[tempFilterBulanSelesai]} ${tempFilterTahun}`)
+            pemicuNotifikasi(`Filter diterapkan: ${daftarBulan[tempFilterBulanMulai]} - ${daftarBulan[bulan]} ${tempFilterTahun}`)
           }
 
           const eksporData = () => {
@@ -1043,77 +1057,113 @@ Total Gaji: Rp ${murni.total.toLocaleString('id-ID')}`
                 </div>
               )}
 
-              {/* MODAL FILTER RANGE BULAN-TAHUN */}
+              {/* MODAL FILTER RANGE BULAN-TAHUN - STEP BY STEP */}
               {tampilkanFilterRangeModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                   <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-stone-200">
                     <div className="bg-amber-950 text-white p-4">
-                      <h5 className="font-bold text-base m-0">Filter Range Bulan & Tahun</h5>
-                      <p className="text-xs text-amber-200 m-0">Pilih rentang bulan dan tahun untuk akumulasi</p>
+                      <h5 className="font-bold text-base m-0">
+                        {stepFilterRange === 'tahun' && 'Pilih Tahun'}
+                        {stepFilterRange === 'bulanMulai' && 'Pilih Bulan Mulai'}
+                        {stepFilterRange === 'bulanSelesai' && 'Pilih Bulan Selesai'}
+                      </h5>
+                      <p className="text-xs text-amber-200 m-0">
+                        {stepFilterRange === 'tahun' && 'Pilih tahun untuk filter range'}
+                        {stepFilterRange === 'bulanMulai' && `Tahun: ${tempFilterTahun}`}
+                        {stepFilterRange === 'bulanSelesai' && `Tahun: ${tempFilterTahun} | Mulai: ${daftarBulan[tempFilterBulanMulai]}`}
+                      </p>
                     </div>
 
-                    <div className="p-4 space-y-4">
-                      {/* Pilih Tahun */}
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">Pilih Tahun</label>
-                        <select 
-                          value={tempFilterTahun}
-                          onChange={(e) => setTempFilterTahun(parseInt(e.target.value))}
-                          className="w-full p-2.5 border border-stone-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
-                        >
-                          {daftarTahun.map(thn => (
-                            <option key={thn} value={thn}>{thn}</option>
+                    <div className="p-4">
+                      {stepFilterRange === 'tahun' && (
+                        <div className="grid grid-cols-3 gap-3">
+                          {daftarTahun.map((thn) => (
+                            <button
+                              key={thn}
+                              onClick={() => pilihTahunFilter(thn)}
+                              className={`py-3 px-2 text-sm font-bold rounded-xl transition ${
+                                tempFilterTahun === thn 
+                                  ? 'bg-amber-950 text-white ring-2 ring-amber-500' 
+                                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                              }`}
+                            >
+                              {thn}
+                            </button>
                           ))}
-                        </select>
-                      </div>
+                        </div>
+                      )}
 
-                      {/* Pilih Bulan Mulai */}
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">Bulan Mulai</label>
-                        <select 
-                          value={tempFilterBulanMulai}
-                          onChange={(e) => setTempFilterBulanMulai(parseInt(e.target.value))}
-                          className="w-full p-2.5 border border-stone-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
-                        >
+                      {stepFilterRange === 'bulanMulai' && (
+                        <div className="grid grid-cols-3 gap-2">
                           {daftarBulan.map((bln, idx) => (
-                            <option key={idx} value={idx}>{bln}</option>
+                            <button
+                              key={idx}
+                              onClick={() => pilihBulanMulaiFilter(idx)}
+                              className={`py-2.5 px-2 text-xs font-semibold rounded-xl transition ${
+                                tempFilterBulanMulai === idx 
+                                  ? 'bg-amber-800 text-white ring-2 ring-amber-500' 
+                                  : 'bg-stone-50 hover:bg-stone-150 border border-stone-200 text-stone-700'
+                              }`}
+                            >
+                              {bln}
+                            </button>
                           ))}
-                        </select>
-                      </div>
+                        </div>
+                      )}
 
-                      {/* Pilih Bulan Selesai */}
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">Bulan Selesai</label>
-                        <select 
-                          value={tempFilterBulanSelesai}
-                          onChange={(e) => setTempFilterBulanSelesai(parseInt(e.target.value))}
-                          className="w-full p-2.5 border border-stone-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
-                        >
-                          {daftarBulan.map((bln, idx) => (
-                            <option key={idx} value={idx}>{bln}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Preview Range */}
-                      <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs text-amber-900 text-center">
-                        <span className="font-bold">Range terpilih:</span> {daftarBulan[tempFilterBulanMulai]} - {daftarBulan[tempFilterBulanSelesai]} {tempFilterTahun}
-                      </div>
+                      {stepFilterRange === 'bulanSelesai' && (
+                        <div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {daftarBulan.map((bln, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => pilihBulanSelesaiFilter(idx)}
+                                className={`py-2.5 px-2 text-xs font-semibold rounded-xl transition ${
+                                  tempFilterBulanSelesai === idx 
+                                    ? 'bg-amber-800 text-white ring-2 ring-amber-500' 
+                                    : 'bg-stone-50 hover:bg-stone-150 border border-stone-200 text-stone-700'
+                                } ${idx < tempFilterBulanMulai ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                disabled={idx < tempFilterBulanMulai}
+                              >
+                                {bln}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="mt-3 text-xs text-stone-500 text-center">
+                            {tempFilterBulanSelesai < tempFilterBulanMulai && (
+                              <span className="text-red-600">⚠️ Bulan selesai harus lebih besar dari bulan mulai</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="bg-stone-50 px-4 py-3 flex gap-2 border-t border-stone-150 justify-end">
+                    <div className="bg-stone-50 px-4 py-3 flex gap-2 border-t border-stone-150 justify-between">
                       <button 
-                        onClick={() => setTampilkanFilterRangeModal(false)} 
-                        className="px-4 py-2 bg-stone-200 text-stone-700 hover:bg-stone-300 rounded-xl text-xs font-bold transition"
+                        onClick={() => {
+                          if (stepFilterRange === 'tahun') {
+                            setTampilkanFilterRangeModal(false)
+                          } else if (stepFilterRange === 'bulanMulai') {
+                            setStepFilterRange('tahun')
+                          } else if (stepFilterRange === 'bulanSelesai') {
+                            setStepFilterRange('bulanMulai')
+                          }
+                        }} 
+                        className="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl text-xs font-bold transition"
                       >
-                        Batal
+                        {stepFilterRange === 'tahun' ? 'Batal' : 'Kembali'}
                       </button>
-                      <button 
-                        onClick={terapkanFilterRange} 
-                        className="px-4 py-2 bg-amber-950 hover:bg-amber-900 text-white rounded-xl text-xs font-bold transition"
-                      >
-                        Terapkan Filter
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {stepFilterRange === 'tahun' && (
+                          <span className="text-[10px] text-stone-400">Step 1 dari 3</span>
+                        )}
+                        {stepFilterRange === 'bulanMulai' && (
+                          <span className="text-[10px] text-stone-400">Step 2 dari 3</span>
+                        )}
+                        {stepFilterRange === 'bulanSelesai' && (
+                          <span className="text-[10px] text-stone-400">Step 3 dari 3</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
