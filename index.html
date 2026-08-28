@@ -190,6 +190,23 @@
                 }
             }
 
+            const resetKeBulanSekarang = () => {
+                const sekarang = new Date()
+                let bln = sekarang.getMonth()
+                let thn = sekarang.getFullYear()
+                if (sekarang.getDate() > 20) {
+                    if (bln === 11) {
+                        bln = 0
+                        thn = thn + 1
+                    } else {
+                        bln = bln + 1
+                    }
+                }
+                setBulanAktif(bln)
+                setTahunAktif(thn)
+                pemicuNotifikasi(`Periode direset ke Gajian 25 ${daftarBulan[bln]} ${thn}`)
+            }
+
             const jumlahHari = new Date(tahunAktif, bulanAktif + 1, 0).getDate()
             const hariPertama = new Date(tahunAktif, bulanAktif, 1).getDay()
 
@@ -1239,7 +1256,7 @@
                                                 return (
                                                     <button
                                                         key={tanggal}
-                                                        onClick={() => bukaModalInput(tanggal)}
+                                                        onClick={() => bukaFormShift(tanggal)}
                                                         className={`rounded-xl p-1.5 flex flex-col justify-between items-start border text-left transition focus:outline-none h-16 sm:h-20 text-xs relative overflow-hidden ${bgKelas} ${isToday ? 'ring-2 ring-amber-950 font-black shadow-sm' : ''} ${isAfter20 ? 'ring-1 ring-amber-400/60' : ''}`}
                                                     >
                                                         <div className="w-full flex justify-between items-center">
