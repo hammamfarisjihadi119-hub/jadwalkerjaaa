@@ -133,6 +133,7 @@
             const [notifikasi, setNotifikasi] = useState(null)
             const [simulasiBiasa, setSimulasiBiasa] = useState(0)
             const [simulasiLong, setSimulasiLong] = useState(0)
+            const [isMultiFilter, setIsMultiFilter] = useState(false)
 
             const [tampilkanModalLaporan, setTampilkanModalLaporan] = useState(false)
             const [tipeLaporan, setTipeLaporan] = useState('tutupBuku')
@@ -1329,22 +1330,76 @@
 
                                 {/* Visual 2 Bulan Kalender (Tutup Buku 21-20) */}
                                 <div className="space-y-4">
-                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                        <h3 className="text-sm font-bold text-stone-850 m-0">
-                                            Visual Kalender 2 Bulan per Gajian (Cut-off 21 - 20)
-                                        </h3>
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-stone-50 p-3 rounded-xl border border-stone-200">
+                                        <div>
+                                            <h3 className="text-xs font-bold text-stone-850 m-0">
+                                                Visual Kalender 2 Bulan (Cut-off 21 - 20)
+                                            </h3>
+                                            <p className="text-[10px] text-stone-500 m-0 font-semibold">
+                                                {isMultiFilter 
+                                                    ? `Menampilkan Range Multi-Gajian: ${daftarBulan[filterBulanMulai]} - ${daftarBulan[filterBulanSelesai]} ${filterTahun}`
+                                                    : `Fokus Periode Gajian 25 ${daftarBulan[bulanAktif]} ${tahunAktif}`
+                                                }
+                                            </p>
+                                        </div>
                                         <button
-                                            onClick={bukaModalFilter}
-                                            className="bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold py-1.5 px-3 rounded-xl border border-amber-300 transition"
+                                            onClick={() => setIsMultiFilter(!isMultiFilter)}
+                                            className={`text-xs font-bold py-1.5 px-3 rounded-xl border transition ${isMultiFilter ? 'bg-amber-950 text-white border-amber-950 shadow-sm' : 'bg-amber-100 text-amber-950 border-amber-300 hover:bg-amber-200'}`}
                                         >
-                                            Filter Multi-Gajian ({daftarBulan[filterBulanMulai]} - {daftarBulan[filterBulanSelesai]})
+                                            {isMultiFilter ? '✕ Kembalikan ke 1 Gajian' : '📅 Filter Multi-Gajian'}
                                         </button>
                                     </div>
 
-                                    {Array.from({ length: filterBulanSelesai - filterBulanMulai + 1 }).map((_, idx) => {
-                                        const bln = filterBulanMulai + idx
-                                        return renderDuaBulanGajian(filterTahun, bln)
-                                    })}
+                                    {isMultiFilter && (
+                                        <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl space-y-2.5 shadow-xs">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-bold text-amber-950 text-[11px] uppercase tracking-wider">
+                                                    Pilih Range Multi-Gajian Terfilter:
+                                                </span>
+                                                <button
+                                                    onClick={resetFilter}
+                                                    className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded-lg hover:bg-red-600 transition"
+                                                >
+                                                    Reset Filter
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <button
+                                                    onClick={bukaModalTahun}
+                                                    className="bg-white p-2 rounded-xl border border-amber-300 text-center hover:bg-amber-100/50 transition"
+                                                >
+                                                    <span className="text-[9px] text-stone-500 block">Tahun</span>
+                                                    <span className="font-bold text-amber-950 text-xs">{filterTahun}</span>
+                                                    <span className="text-[8px] text-stone-400 block">▼ ubah</span>
+                                                </button>
+                                                <button
+                                                    onClick={bukaModalBulanMulai}
+                                                    className="bg-white p-2 rounded-xl border border-amber-300 text-center hover:bg-amber-100/50 transition"
+                                                >
+                                                    <span className="text-[9px] text-stone-500 block">Bulan Mulai</span>
+                                                    <span className="font-bold text-blue-700 text-xs">{daftarBulan[filterBulanMulai]}</span>
+                                                    <span className="text-[8px] text-stone-400 block">▼ ubah</span>
+                                                </button>
+                                                <button
+                                                    onClick={bukaModalBulanSelesai}
+                                                    className="bg-white p-2 rounded-xl border border-amber-300 text-center hover:bg-amber-100/50 transition"
+                                                >
+                                                    <span className="text-[9px] text-stone-500 block">Bulan Selesai</span>
+                                                    <span className="font-bold text-green-700 text-xs">{daftarBulan[filterBulanSelesai]}</span>
+                                                    <span className="text-[8px] text-stone-400 block">▼ ubah</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {isMultiFilter ? (
+                                        Array.from({ length: filterBulanSelesai - filterBulanMulai + 1 }).map((_, idx) => {
+                                            const bln = filterBulanMulai + idx
+                                            return renderDuaBulanGajian(filterTahun, bln)
+                                        })
+                                    ) : (
+                                        renderDuaBulanGajian(tahunAktif, bulanAktif)
+                                    )}
                                 </div>
 
                                 {/* Summary & All-Time Table */}
