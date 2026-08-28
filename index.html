@@ -293,10 +293,17 @@
                 let totalHariPeriode = 0
                 let rincian = []
 
+                let b1Total = 0, b1Pagi = 0, b1Sore = 0, b1Long = 0, b1Libur = 0, b1Hari = 0
+                let b2Total = 0, b2Pagi = 0, b2Sore = 0, b2Long = 0, b2Libur = 0, b2Hari = 0
+
                 let loop = new Date(tglAwal)
 
                 while (loop <= tglAkhir) {
                     totalHariPeriode++
+                    const isBulan1 = (loop.getMonth() === bulanMulai && loop.getFullYear() === tahunMulai)
+                    if (isBulan1) b1Hari++
+                    else b2Hari++
+
                     const key = formatKeKey(loop.getFullYear(), loop.getMonth(), loop.getDate())
                     const shift = dataShift[key]
                     if (shift) {
@@ -306,6 +313,19 @@
                             if (shift.tipe === 'Pagi') pagi++
                             if (shift.tipe === 'Sore') sore++
                             if (shift.tipe === 'Long') long++
+
+                            if (isBulan1) {
+                                b1Total += tarif
+                                if (shift.tipe === 'Pagi') b1Pagi++
+                                if (shift.tipe === 'Sore') b1Sore++
+                                if (shift.tipe === 'Long') b1Long++
+                            } else {
+                                b2Total += tarif
+                                if (shift.tipe === 'Pagi') b2Pagi++
+                                if (shift.tipe === 'Sore') b2Sore++
+                                if (shift.tipe === 'Long') b2Long++
+                            }
+
                             rincian.push({
                                 tanggal: loop.getDate(),
                                 tipe: shift.tipe,
@@ -315,6 +335,8 @@
                             })
                         } else {
                             libur++
+                            if (isBulan1) b1Libur++
+                            else b2Libur++
                         }
                     }
                     loop.setDate(loop.getDate() + 1)
@@ -325,6 +347,8 @@
                 const selisihGaji = total - targetGajiNormal
                 const kurangShift = total < targetGajiNormal ? Math.ceil((targetGajiNormal - total) / 70000) : 0
                 const persentaseTarget = targetGajiNormal > 0 ? Math.min(100, Math.round((total / targetGajiNormal) * 100)) : 0
+
+                const jlhHariBulanMulai = new Date(tahunMulai, bulanMulai + 1, 0).getDate()
 
                 return {
                     total,
@@ -338,6 +362,28 @@
                     kurangShift,
                     persentaseTarget,
                     rincian,
+                    bulan1: {
+                        namaBulan: `${daftarBulan[bulanMulai]} ${tahunMulai}`,
+                        labelRange: `21-${jlhHariBulanMulai} ${daftarBulan[bulanMulai]}`,
+                        total: b1Total,
+                        pagi: b1Pagi,
+                        sore: b1Sore,
+                        long: b1Long,
+                        libur: b1Libur,
+                        hariCount: b1Hari,
+                        shiftCount: b1Pagi + b1Sore + b1Long
+                    },
+                    bulan2: {
+                        namaBulan: `${daftarBulan[bulanAktif]} ${tahunAktif}`,
+                        labelRange: `1-20 ${daftarBulan[bulanAktif]}`,
+                        total: b2Total,
+                        pagi: b2Pagi,
+                        sore: b2Sore,
+                        long: b2Long,
+                        libur: b2Libur,
+                        hariCount: b2Hari,
+                        shiftCount: b2Pagi + b2Sore + b2Long
+                    },
                     tglMulai: tglAwal,
                     tglAkhir: tglAkhir,
                     tglGajian: tglGajian,
@@ -595,7 +641,7 @@
                     if (tutupBuku.selisihGaji >= 0) {
                         statusGantiLiburText = tutupBuku.selisihGaji > 0 ? `Surplus (+Rp ${tutupBuku.selisihGaji.toLocaleString('id-ID')})` : 'Normal / Terbayar Penuh'
                     } else {
-                        statusGantiLiburText = `Kurang ${tutupBuku.kurangShift}x Long Shift (Defisit Rp ${Math.abs(tutupBuku.selisihGaji).toLocaleString('id-ID')})`
+                        statusGantiLiburText = `Kurang ${tutupBuku.kurangShift} Shift lagi (misal: ${tutupBuku.kurangShift}x Shift Biasa / ${tutupBuku.kurangShift}x Long Shift)`
                     }
 
                     return `Laporan Gaji Nescafe - Sistem Tutup Buku
@@ -607,6 +653,10 @@
         - Target Gaji Normal (${tutupBuku.totalHariPeriode} Hari): Rp ${tutupBuku.targetGajiNormal.toLocaleString('id-ID')}
         - Upah Terkumpul: Rp ${tutupBuku.total.toLocaleString('id-ID')}
         - Status Ganti Libur: ${statusGantiLiburText}
+
+        Rincian Kontribusi 2 Bulan:
+        - 1. ${tutupBuku.bulan1.namaBulan} (${tutupBuku.bulan1.labelRange}): Rp ${tutupBuku.bulan1.total.toLocaleString('id-ID')} (${tutupBuku.bulan1.shiftCount} Shift)
+        - 2. ${tutupBuku.bulan2.namaBulan} (${tutupBuku.bulan2.labelRange}): Rp ${tutupBuku.bulan2.total.toLocaleString('id-ID')} (${tutupBuku.bulan2.shiftCount} Shift)
 
         Rincian Kerja:
         ${rincianText || 'Tidak ada shift kerja terdaftar'}
@@ -877,7 +927,7 @@
                                             </span>
                                         </div>
 
-                                        <div className="text-xs space-y-2">
+                                        <div className="text-xs space-y-2.5">
                                             <div className="flex justify-between text-stone-600">
                                                 <span>Target Gaji Normal ({tutupBuku.totalHariPeriode} hr):</span>
                                                 <span className="font-bold text-stone-800">Rp {tutupBuku.targetGajiNormal.toLocaleString('id-ID')}</span>
@@ -891,6 +941,19 @@
                                                 <div className="bg-red-50 p-2 rounded-lg border border-red-200 text-center">
                                                     <span className="text-stone-500 block">Long Shift</span>
                                                     <span className="text-red-600 font-bold text-xs">{tutupBuku.long}x</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Rincian 2 Bulan di Sidebar */}
+                                            <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-200 space-y-1.5 text-[10px]">
+                                                <span className="font-bold text-stone-700 block border-b border-stone-200 pb-1 text-[9px] uppercase">Contribusi 2 Bulan (Cut-off 21-20):</span>
+                                                <div className="flex justify-between text-stone-600">
+                                                    <span>1. {tutupBuku.bulan1.namaBulan} ({tutupBuku.bulan1.labelRange}):</span>
+                                                    <strong className="text-stone-800">Rp {tutupBuku.bulan1.total.toLocaleString('id-ID')}</strong>
+                                                </div>
+                                                <div className="flex justify-between text-stone-600">
+                                                    <span>2. {tutupBuku.bulan2.namaBulan} ({tutupBuku.bulan2.labelRange}):</span>
+                                                    <strong className="text-stone-800">Rp {tutupBuku.bulan2.total.toLocaleString('id-ID')}</strong>
                                                 </div>
                                             </div>
 
@@ -914,12 +977,14 @@
                                                         <span>{tutupBuku.selisihGaji > 0 ? `Surplus (+Rp ${tutupBuku.selisihGaji.toLocaleString('id-ID')})` : 'Gaji Normal Tercapai / Full!'}</span>
                                                     </div>
                                                 ) : (
-                                                    <div className="bg-amber-50 p-2 rounded-xl border border-amber-200 text-[10px] text-amber-900 font-semibold space-y-0.5">
-                                                        <div className="flex items-center gap-1 font-bold text-amber-800">
+                                                    <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-[10px] text-amber-900 font-semibold space-y-1">
+                                                        <div className="flex items-center gap-1 font-bold text-amber-900">
                                                             <span>🚨</span>
-                                                            <span>Butuh {tutupBuku.kurangShift}x Long Shift lagi</span>
+                                                            <span>Butuh {tutupBuku.kurangShift} Shift lagi</span>
                                                         </div>
-                                                        <p className="m-0 text-[9px] text-amber-700 leading-tight">Ambil {tutupBuku.kurangShift}x Long Shift sebelum Tgl 20 agar gajian Tgl 25 mencapai Rp {tutupBuku.targetGajiNormal.toLocaleString('id-ID')}</p>
+                                                        <p className="m-0 text-[9px] text-amber-800 leading-tight">
+                                                            Bisa dengan {tutupBuku.kurangShift}x Shift Biasa (Pagi/Sore) atau {tutupBuku.kurangShift}x Long Shift sebelum Tgl 20.
+                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
@@ -1218,6 +1283,37 @@
                                                 </div>
                                             </div>
 
+                                            <div className="bg-amber-950/80 p-3 rounded-xl border border-amber-800/80 space-y-2 text-xs">
+                                                <div className="flex justify-between items-center border-b border-amber-800/60 pb-1.5">
+                                                    <span className="font-bold text-amber-200 text-[11px]">📅 Contribusi 2 Bulan (Periode Tutup Buku)</span>
+                                                    <span className="text-[9px] text-amber-300/70">Gajian {tutupBuku.labelGajian}</span>
+                                                </div>
+
+                                                <div className="space-y-1.5 text-[10px]">
+                                                    <div className="flex justify-between items-center bg-amber-900/50 p-2 rounded-lg border border-amber-800/50">
+                                                        <div>
+                                                            <span className="font-bold text-amber-200 block">1. {tutupBuku.bulan1.namaBulan}</span>
+                                                            <span className="text-amber-300/70 text-[9px]">{tutupBuku.bulan1.labelRange}</span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="font-bold text-white block">Rp {tutupBuku.bulan1.total.toLocaleString('id-ID')}</span>
+                                                            <span className="text-amber-300/70 text-[9px]">{tutupBuku.bulan1.shiftCount} Shift ({tutupBuku.bulan1.pagi}P/{tutupBuku.bulan1.sore}S/{tutupBuku.bulan1.long}L)</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex justify-between items-center bg-amber-900/50 p-2 rounded-lg border border-amber-800/50">
+                                                        <div>
+                                                            <span className="font-bold text-amber-200 block">2. {tutupBuku.bulan2.namaBulan}</span>
+                                                            <span className="text-amber-300/70 text-[9px]">{tutupBuku.bulan2.labelRange}</span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="font-bold text-white block">Rp {tutupBuku.bulan2.total.toLocaleString('id-ID')}</span>
+                                                            <span className="text-amber-300/70 text-[9px]">{tutupBuku.bulan2.shiftCount} Shift ({tutupBuku.bulan2.pagi}P/{tutupBuku.bulan2.sore}S/{tutupBuku.bulan2.long}L)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div className="bg-amber-950/70 p-3 rounded-xl border border-amber-800/80 text-xs space-y-2">
                                                 <div className="flex justify-between items-center border-b border-amber-800/60 pb-1.5">
                                                     <span className="font-bold text-amber-200 text-[11px]">⚖️ Evaluasi Ganti Libur (Gali-Tutup)</span>
@@ -1232,10 +1328,10 @@
                                                         <div className="bg-amber-900/80 p-2 rounded-lg border border-amber-700/70 text-[10px] text-amber-100 space-y-1">
                                                             <div className="font-bold flex items-center gap-1 text-amber-300">
                                                                 <span>🚨</span>
-                                                                <span>Kurang {tutupBuku.kurangShift}x Long Shift lagi</span>
+                                                                <span>Kurang {tutupBuku.kurangShift} Shift lagi</span>
                                                             </div>
                                                             <p className="m-0 text-[9px] text-amber-200/90 leading-tight">
-                                                                Ambil {tutupBuku.kurangShift}x Long Shift sebelum Tutup Buku (Tgl 20) agar Gajian Tgl 25 mencapai Target Rp {tutupBuku.targetGajiNormal.toLocaleString('id-ID')}.
+                                                                Dapat dipenuhi dengan {tutupBuku.kurangShift}x Shift Biasa (Pagi/Sore) atau {tutupBuku.kurangShift}x Long Shift sebelum Tutup Buku (Tgl 20).
                                                             </p>
                                                         </div>
                                                     )}
