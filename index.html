@@ -388,6 +388,22 @@
             const akumulasiSemua = hitungAkumulasiSemua()
             const akumulasiFilter = hitungGajiRangeBulan(filterTahun, filterBulanMulai, filterBulanSelesai)
 
+            const jlhHariBulanAktif = new Date(tahunAktif, bulanAktif + 1, 0).getDate()
+            let countShiftNextMonth = 0
+            let totalGajiNextMonth = 0
+            for (let tgl = 21; tgl <= jlhHariBulanAktif; tgl++) {
+                const key = formatKeKey(tahunAktif, bulanAktif, tgl)
+                const shift = dataShift[key]
+                if (shift && shift.tipe !== 'Libur') {
+                    countShiftNextMonth++
+                    totalGajiNextMonth += (TARIF[shift.tipe] || 0)
+                }
+            }
+            const bulanBerikutnyaIdx = bulanAktif === 11 ? 0 : bulanAktif + 1
+            const tahunBerikutnya = bulanAktif === 11 ? tahunAktif + 1 : tahunAktif
+            const bulanSebelumIdx = bulanAktif === 0 ? 11 : bulanAktif - 1
+            const tahunSebelum = bulanAktif === 0 ? tahunAktif - 1 : tahunAktif
+
             const keyGajiPeriod = tutupBuku.keyGajiPeriod
             const gajianLunas = statusGaji[keyGajiPeriod] || false
 
@@ -758,20 +774,20 @@
 
                                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200">
                                         <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mb-2">
-                                            Gaji Bulan Ini
+                                            Gajian 25 {daftarBulan[bulanAktif]} {tahunAktif}
                                         </span>
-                                        <p className="text-xs text-stone-500 m-0">Periode gaji {daftarBulan[bulanAktif]} {tahunAktif}:</p>
-                                        <p className="text-xs text-amber-600 m-0">1-20 {daftarBulan[bulanAktif]} + 21-{new Date(bulanAktif-1 < 0 ? tahunAktif-1 : tahunAktif, bulanAktif-1 < 0 ? 11 : bulanAktif-1, 0).getDate()} {daftarBulan[bulanAktif-1 < 0 ? 11 : bulanAktif-1]}</p>
+                                        <p className="text-xs font-bold text-stone-700 m-0">Periode Tutup Buku:</p>
+                                        <p className="text-xs text-amber-700 font-semibold m-0">21 {daftarBulan[bulanSebelumIdx]} - 20 {daftarBulan[bulanAktif]}</p>
 
                                         <div className="border-t border-stone-150 pt-3 flex flex-col gap-3">
                                             <div>
-                                                <span className="text-xs text-stone-500 block">Total Pendapatan Bulan Ini</span>
+                                                <span className="text-xs text-stone-500 block">Total Upah Periode Ini</span>
                                                 <span className="text-2xl font-black text-emerald-700">
-                                                    Rp {murni.total.toLocaleString('id-ID')}
+                                                    Rp {tutupBuku.total.toLocaleString('id-ID')}
                                                 </span>
                                             </div>
                                             <button
-                                                onClick={() => bukaModalLaporan('murni')}
+                                                onClick={() => bukaModalLaporan('tutupBuku')}
                                                 className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 border border-emerald-200 focus:outline-none"
                                             >
                                                 Kirim Laporan Kerja
@@ -779,27 +795,45 @@
                                         </div>
                                     </div>
 
+                                    {countShiftNextMonth > 0 && (
+                                        <div className="bg-amber-50 p-4 rounded-2xl border-2 border-amber-300 text-xs space-y-1.5 shadow-sm">
+                                            <div className="flex items-center gap-1.5 font-bold text-amber-950">
+                                                <span>📌 Shift Tgl 21–{jlhHariBulanAktif} {daftarBulan[bulanAktif]}</span>
+                                            </div>
+                                            <p className="m-0 text-amber-800 leading-tight">
+                                                Terdapat <strong>{countShiftNextMonth} shift</strong> (Rp {totalGajiNextMonth.toLocaleString('id-ID')}) pada tgl 21 ke atas.
+                                            </p>
+                                            <div className="bg-amber-100/90 p-2 rounded-xl border border-amber-300 text-[10px] text-amber-950 font-bold">
+                                                ➡️ Sesuai Tutup Buku Tgl 20, shift ini masuk ke Gajian 25 {daftarBulan[bulanBerikutnyaIdx]} {tahunBerikutnya}.
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200">
                                         <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">
-                                            Rincian Shift ({daftarBulan[bulanAktif]})
+                                            Rincian Shift (21 {daftarBulan[bulanSebelumIdx]} - 20 {daftarBulan[bulanAktif]})
                                         </h3>
-                                        <div className="grid grid-cols-3 gap-2 text-xs">
+                                        <div className="grid grid-cols-4 gap-1.5 text-xs">
                                             <div className="bg-blue-50 p-2 rounded-lg border border-blue-200 text-center">
-                                                <span className="text-stone-500 block">Pagi</span>
-                                                <span className="text-base font-bold text-blue-700">{murni.pagi}x</span>
+                                                <span className="text-stone-500 block text-[9px]">Pagi</span>
+                                                <span className="text-sm font-bold text-blue-700">{tutupBuku.pagi}x</span>
                                             </div>
                                             <div className="bg-yellow-100 p-2 rounded-lg border border-yellow-250 text-center">
-                                                <span className="text-stone-500 block">Sore</span>
-                                                <span className="text-base font-bold text-yellow-600">{murni.sore}x</span>
+                                                <span className="text-stone-500 block text-[9px]">Sore</span>
+                                                <span className="text-sm font-bold text-yellow-600">{tutupBuku.sore}x</span>
                                             </div>
                                             <div className="bg-red-100 p-2 rounded-lg border border-red-200 text-center">
-                                                <span className="text-stone-500 block">Long</span>
-                                                <span className="text-base font-bold text-red-600">{murni.long}x</span>
+                                                <span className="text-stone-500 block text-[9px]">Long</span>
+                                                <span className="text-sm font-bold text-red-600">{tutupBuku.long}x</span>
+                                            </div>
+                                            <div className="bg-slate-100 p-2 rounded-lg border border-slate-200 text-center">
+                                                <span className="text-stone-500 block text-[9px]">Off</span>
+                                                <span className="text-sm font-bold text-slate-700">{tutupBuku.libur}x</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-3">
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-3">
                                         <div className="flex justify-between items-center border-b border-stone-100 pb-2">
                                             <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider m-0">
                                                 ⚖️ Ganti Libur (Cut-off 21-20)
@@ -860,8 +894,8 @@
 
                                     <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-[10px] text-amber-800">
                                         <p className="m-0 font-semibold">📌 Aturan Gaji:</p>
-                                        <p className="m-0 text-amber-700">Tanggal 1-20: masuk bulan {daftarBulan[bulanAktif]}</p>
-                                        <p className="m-0 text-amber-700">Tanggal 21-31: masuk bulan {bulanAktif === 11 ? daftarBulan[0] : daftarBulan[bulanAktif+1]}</p>
+                                        <p className="m-0 text-amber-700">Tanggal 1-20: masuk Gajian 25 {daftarBulan[bulanAktif]}</p>
+                                        <p className="m-0 text-amber-700">Tanggal 21-31: masuk Gajian 25 {daftarBulan[bulanBerikutnyaIdx]}</p>
                                     </div>
                                 </div>
 
