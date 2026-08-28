@@ -131,6 +131,8 @@
             const [tempTahun, setTempTahun] = useState(tahunAktif)
 
             const [notifikasi, setNotifikasi] = useState(null)
+            const [simulasiBiasa, setSimulasiBiasa] = useState(0)
+            const [simulasiLong, setSimulasiLong] = useState(0)
 
             const [tampilkanModalLaporan, setTampilkanModalLaporan] = useState(false)
             const [tipeLaporan, setTipeLaporan] = useState('tutupBuku')
@@ -793,6 +795,202 @@
                 )
             }
 
+            const renderDuaBulanGajian = (tahun, bln) => {
+                const blnSebelumIdx = bln === 0 ? 11 : bln - 1
+                const thnSebelum = bln === 0 ? tahun - 1 : tahun
+
+                const jlhHariB1 = new Date(thnSebelum, blnSebelumIdx + 1, 0).getDate()
+                const hariPertamaB1 = new Date(thnSebelum, blnSebelumIdx, 1).getDay()
+
+                const jlhHariB2 = new Date(tahun, bln + 1, 0).getDate()
+                const hariPertamaB2 = new Date(tahun, bln, 1).getDay()
+
+                let b1Shift = 0, b1Total = 0, b1Pagi = 0, b1Sore = 0, b1Long = 0, b1Libur = 0
+                for (let t = 21; t <= jlhHariB1; t++) {
+                    const k = formatKeKey(thnSebelum, blnSebelumIdx, t)
+                    const s = dataShift[k]
+                    if (s) {
+                        if (s.tipe !== 'Libur') {
+                            b1Shift++
+                            b1Total += (TARIF[s.tipe] || 0)
+                            if (s.tipe === 'Pagi') b1Pagi++
+                            if (s.tipe === 'Sore') b1Sore++
+                            if (s.tipe === 'Long') b1Long++
+                        } else {
+                            b1Libur++
+                        }
+                    }
+                }
+
+                let b2Shift = 0, b2Total = 0, b2Pagi = 0, b2Sore = 0, b2Long = 0, b2Libur = 0
+                for (let t = 1; t <= 20; t++) {
+                    const k = formatKeKey(tahun, bln, t)
+                    const s = dataShift[k]
+                    if (s) {
+                        if (s.tipe !== 'Libur') {
+                            b2Shift++
+                            b2Total += (TARIF[s.tipe] || 0)
+                            if (s.tipe === 'Pagi') b2Pagi++
+                            if (s.tipe === 'Sore') b2Sore++
+                            if (s.tipe === 'Long') b2Long++
+                        } else {
+                            b2Libur++
+                        }
+                    }
+                }
+
+                const totalGajian = b1Total + b2Total
+                const totalHariPeriode = (jlhHariB1 - 21 + 1) + 20
+
+                return (
+                    <div key={`gajian-pair-${tahun}-${bln}`} className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-4 mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-stone-150 pb-3 gap-2">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <span className="inline-block bg-amber-950 text-amber-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                        Gajian 25 {daftarBulan[bln]} {tahun}
+                                    </span>
+                                    <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full">
+                                        Rincian 2 Bulan
+                                    </span>
+                                </div>
+                                <p className="text-xs text-stone-500 font-semibold m-0 mt-1">
+                                    Rentang Periode Tutup Buku: <strong>21 {daftarBulan[blnSebelumIdx]} {thnSebelum} – 20 {daftarBulan[bln]} {tahun}</strong> ({totalHariPeriode} Hari)
+                                </p>
+                            </div>
+                            <div className="bg-amber-50 px-4 py-2 rounded-xl border border-amber-200 text-right w-full sm:w-auto">
+                                <span className="text-[10px] text-amber-800 font-bold block uppercase">Total Upah Gajian 25 {daftarBulan[bln]}</span>
+                                <span className="text-lg font-black text-amber-950">Rp {totalGajian.toLocaleString('id-ID')}</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Card Bulan 1: 21 s/d Akhir Bulan Lalu */}
+                            <div className="bg-stone-50 p-3.5 rounded-xl border-2 border-amber-300/80 shadow-xs space-y-2">
+                                <div className="flex justify-between items-center border-b border-stone-200 pb-1.5">
+                                    <div>
+                                        <span className="font-bold text-xs text-stone-850 block">
+                                            1. {daftarBulan[blnSebelumIdx]} {thnSebelum}
+                                        </span>
+                                        <span className="text-[9px] text-amber-700 font-bold block">
+                                            Bagian 21–{jlhHariB1} {daftarBulan[blnSebelumIdx]}
+                                        </span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-xs font-bold text-amber-950 block">Rp {b1Total.toLocaleString('id-ID')}</span>
+                                        <span className="text-[9px] text-stone-500 block font-semibold">{b1Shift} Shift ({b1Pagi}P/{b1Sore}S/{b1Long}L)</span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1 text-center font-bold text-[8px] text-stone-400 uppercase">
+                                    <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1">
+                                    {Array.from({ length: hariPertamaB1 }).map((_, idx) => (
+                                        <div key={`b1-empty-${tahun}-${bln}-${idx}`} className="rounded-lg bg-stone-100/40 h-7"></div>
+                                    ))}
+                                    {Array.from({ length: jlhHariB1 }).map((_, idx) => {
+                                        const tanggal = idx + 1
+                                        const key = formatKeKey(thnSebelum, blnSebelumIdx, tanggal)
+                                        const shift = dataShift[key]
+                                        const isPeriodGroup = tanggal >= 21
+
+                                        let bgKelas = "bg-white border-stone-200 text-stone-700"
+                                        if (!isPeriodGroup) {
+                                            bgKelas = "bg-stone-100/40 border-stone-150 text-stone-300 opacity-30"
+                                        } else if (shift) {
+                                            if (shift.tipe === 'Pagi') bgKelas = "shift-biru-pagi"
+                                            else if (shift.tipe === 'Sore') bgKelas = "shift-kuning-sore"
+                                            else if (shift.tipe === 'Long') bgKelas = "shift-api-long"
+                                            else if (shift.tipe === 'Libur') bgKelas = "shift-dongker-off"
+                                        }
+
+                                        return (
+                                            <div
+                                                key={`b1-day-${tahun}-${bln}-${tanggal}`}
+                                                className={`rounded-md p-0.5 flex flex-col justify-between items-start border text-left cursor-default h-7 text-[7px] ${bgKelas} ${isPeriodGroup ? 'ring-1 ring-amber-400 font-bold' : ''}`}
+                                            >
+                                                <span className="leading-none">{tanggal}</span>
+                                                {isPeriodGroup && shift && shift.tipe !== 'Libur' && (
+                                                    <span className="text-[5px] font-black uppercase block self-stretch text-center leading-none">
+                                                        {shift.tipe}
+                                                    </span>
+                                                )}
+                                                {isPeriodGroup && shift && shift.tipe === 'Libur' && (
+                                                    <span className="text-[5px] opacity-75 italic block self-stretch text-center leading-none">Off</span>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Card Bulan 2: 1 s/d 20 Bulan Ini */}
+                            <div className="bg-stone-50 p-3.5 rounded-xl border-2 border-amber-300/80 shadow-xs space-y-2">
+                                <div className="flex justify-between items-center border-b border-stone-200 pb-1.5">
+                                    <div>
+                                        <span className="font-bold text-xs text-stone-850 block">
+                                            2. {daftarBulan[bln]} {tahun}
+                                        </span>
+                                        <span className="text-[9px] text-amber-700 font-bold block">
+                                            Bagian 1–20 {daftarBulan[bln]}
+                                        </span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-xs font-bold text-amber-950 block">Rp {b2Total.toLocaleString('id-ID')}</span>
+                                        <span className="text-[9px] text-stone-500 block font-semibold">{b2Shift} Shift ({b2Pagi}P/{b2Sore}S/{b2Long}L)</span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1 text-center font-bold text-[8px] text-stone-400 uppercase">
+                                    <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-1">
+                                    {Array.from({ length: hariPertamaB2 }).map((_, idx) => (
+                                        <div key={`b2-empty-${tahun}-${bln}-${idx}`} className="rounded-lg bg-stone-100/40 h-7"></div>
+                                    ))}
+                                    {Array.from({ length: jlhHariB2 }).map((_, idx) => {
+                                        const tanggal = idx + 1
+                                        const key = formatKeKey(tahun, bln, tanggal)
+                                        const shift = dataShift[key]
+                                        const isPeriodGroup = tanggal <= 20
+
+                                        let bgKelas = "bg-white border-stone-200 text-stone-700"
+                                        if (!isPeriodGroup) {
+                                            bgKelas = "bg-stone-100/40 border-stone-150 text-stone-300 opacity-30"
+                                        } else if (shift) {
+                                            if (shift.tipe === 'Pagi') bgKelas = "shift-biru-pagi"
+                                            else if (shift.tipe === 'Sore') bgKelas = "shift-kuning-sore"
+                                            else if (shift.tipe === 'Long') bgKelas = "shift-api-long"
+                                            else if (shift.tipe === 'Libur') bgKelas = "shift-dongker-off"
+                                        }
+
+                                        return (
+                                            <div
+                                                key={`b2-day-${tahun}-${bln}-${tanggal}`}
+                                                className={`rounded-md p-0.5 flex flex-col justify-between items-start border text-left cursor-default h-7 text-[7px] ${bgKelas} ${isPeriodGroup ? 'ring-1 ring-amber-400 font-bold' : ''}`}
+                                            >
+                                                <span className="leading-none">{tanggal}</span>
+                                                {isPeriodGroup && shift && shift.tipe !== 'Libur' && (
+                                                    <span className="text-[5px] font-black uppercase block self-stretch text-center leading-none">
+                                                        {shift.tipe}
+                                                    </span>
+                                                )}
+                                                {isPeriodGroup && shift && shift.tipe === 'Libur' && (
+                                                    <span className="text-[5px] opacity-75 italic block self-stretch text-center leading-none">Off</span>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
             return (
                 <div className="bg-stone-100 min-h-screen pb-12 text-stone-800 relative">
                     {notifikasi && (
@@ -824,20 +1022,25 @@
                             </div>
                         </div>
                     </header>
-
-                    <div className="max-w-4xl mx-auto px-4 mb-6">
-                        <div className="flex justify-center bg-white p-1.5 rounded-xl shadow-sm border border-stone-200">
+                                       <div className="max-w-4xl mx-auto px-4 mb-6">
+                        <div className="flex justify-center bg-white p-1.5 rounded-xl shadow-sm border border-stone-200 gap-1 overflow-x-auto">
                             <button
-                                className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-all ${tabAktif === 'kalender' ? 'bg-amber-950 text-white shadow-sm' : 'text-stone-600 hover:bg-stone-50'}`}
+                                className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${tabAktif === 'kalender' ? 'bg-amber-950 text-white shadow-sm' : 'text-stone-600 hover:bg-stone-50'}`}
                                 onClick={() => setTabAktif('kalender')}
                             >
-                                Kalender Kerja
+                                📅 Kalender Kerja
                             </button>
                             <button
-                                className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-all ${tabAktif === 'perhitungan' ? 'bg-amber-950 text-white shadow-sm' : 'text-stone-600 hover:bg-stone-50'}`}
+                                className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${tabAktif === 'perhitungan' ? 'bg-amber-950 text-white shadow-sm' : 'text-stone-600 hover:bg-stone-50'}`}
                                 onClick={() => setTabAktif('perhitungan')}
                             >
-                                Akumulasi & Perhitungan Gaji
+                                📊 Akumulasi & Gajian
+                            </button>
+                            <button
+                                className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${tabAktif === 'gantiLibur' ? 'bg-amber-950 text-white shadow-sm' : 'text-stone-600 hover:bg-stone-50'}`}
+                                onClick={() => setTabAktif('gantiLibur')}
+                            >
+                                🎯 Target & Ganti Libur
                             </button>
                         </div>
                     </div>
@@ -858,25 +1061,20 @@
 
                                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200">
                                         <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mb-2">
-                                            Gajian 25 {daftarBulan[bulanAktif]} {tahunAktif}
+                                            Ringkasan Gajian {tutupBuku.labelGajian}
                                         </span>
-                                        <p className="text-xs font-bold text-stone-700 m-0">Periode Tutup Buku:</p>
-                                        <p className="text-xs text-amber-700 font-semibold m-0">21 {daftarBulan[bulanSebelumIdx]} - 20 {daftarBulan[bulanAktif]}</p>
-
-                                        <div className="border-t border-stone-150 pt-3 flex flex-col gap-3">
-                                            <div>
-                                                <span className="text-xs text-stone-500 block">Total Upah Periode Ini</span>
-                                                <span className="text-2xl font-black text-emerald-700">
-                                                    Rp {tutupBuku.total.toLocaleString('id-ID')}
-                                                </span>
-                                            </div>
-                                            <button
-                                                onClick={() => bukaModalLaporan('tutupBuku')}
-                                                className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 border border-emerald-200 focus:outline-none"
-                                            >
-                                                Kirim Laporan Kerja
-                                            </button>
+                                        <div className="border-t border-stone-100 pt-2 flex justify-between items-baseline">
+                                            <span className="text-stone-500 text-xs font-semibold">Total Upah Terkumpul:</span>
+                                            <span className="text-lg font-black text-amber-950">
+                                                Rp {tutupBuku.total.toLocaleString('id-ID')}
+                                            </span>
                                         </div>
+                                        <button
+                                            onClick={() => bukaModalLaporan('tutupBuku')}
+                                            className="w-full mt-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 border border-emerald-200 focus:outline-none"
+                                        >
+                                            Kirim Laporan Kerja
+                                        </button>
                                     </div>
 
                                     {countShiftNextMonth > 0 && (
@@ -1000,586 +1198,416 @@
 
                                 <div className="md:col-span-2 space-y-6">
                                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
-                                        <div className="flex justify-between items-center mb-5">
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={geserKiri} className="p-2 bg-stone-100 hover:bg-stone-200 rounded-lg transition text-stone-700">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                        <path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
-                                                    </svg>
-                                                </button>
-
-                                                <h2 className="text-base font-bold text-stone-800 text-center min-w-[140px] m-0">
-                                                    {daftarBulan[bulanAktif]} {tahunAktif}
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-3 border-b border-stone-150 gap-2">
+                                            <div>
+                                                <h2 className="text-base font-bold text-stone-850 m-0">
+                                                    Kalender Shift Kerja ({daftarBulan[bulanAktif]} {tahunAktif})
                                                 </h2>
-
-                                                <button onClick={geserKanan} className="p-2 bg-stone-100 hover:bg-stone-200 rounded-lg transition text-stone-700">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                        <path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                                    </svg>
-                                                </button>
+                                                <p className="text-xs text-stone-400 m-0">Klik tanggal untuk mencatat atau mengubah shift</p>
                                             </div>
-
-                                            <button
-                                                onClick={() => {
-                                                    const sekarang = new Date()
-                                                    setBulanAktif(sekarang.getMonth())
-                                                    setTahunAktif(sekarang.getFullYear())
-                                                }}
-                                                className="text-xs bg-stone-100 hover:bg-stone-250 text-stone-800 font-bold py-2 px-3 rounded-xl border border-stone-300 transition"
-                                            >
-                                                Bulan Sekarang
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={geserKiri} className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-xs">◀</button>
+                                                <button onClick={resetKeBulanSekarang} className="bg-amber-950 text-white px-3 py-1.5 rounded-xl font-bold text-xs">Bulan Ini</button>
+                                                <button onClick={geserKanan} className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-xs">▶</button>
+                                            </div>
                                         </div>
 
-                                        <div className="grid grid-cols-7 gap-1 text-center font-bold text-[10px] text-stone-400 uppercase mb-2">
-                                            <div>Min</div>
-                                            <div>Sen</div>
-                                            <div>Sel</div>
-                                            <div>Rab</div>
-                                            <div>Kam</div>
-                                            <div>Jum</div>
-                                            <div>Sab</div>
+                                        <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-stone-400 mb-2 uppercase tracking-wider">
+                                            <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
                                         </div>
 
-                                        <div className="grid grid-cols-7 gap-2">
+                                        <div className="grid grid-cols-7 gap-1">
                                             {Array.from({ length: hariPertama }).map((_, idx) => (
-                                                <div key={`empty-${idx}`} className="rounded-xl bg-stone-50 border border-dashed border-stone-200 h-12"></div>
+                                                <div key={`empty-${idx}`} className="rounded-xl bg-stone-50 h-16 sm:h-20"></div>
                                             ))}
 
                                             {Array.from({ length: jumlahHari }).map((_, idx) => {
                                                 const tanggal = idx + 1
                                                 const key = formatKeKey(tahunAktif, bulanAktif, tanggal)
                                                 const shift = dataShift[key]
+                                                const isToday = tanggal === tanggalSekarang.getDate() && bulanAktif === tanggalSekarang.getMonth() && tahunAktif === tanggalSekarang.getFullYear()
+                                                const isAfter20 = tanggal >= 21
 
-                                                let bgKelas = "bg-stone-50 border-stone-200 text-stone-800 hover:bg-stone-100"
-                                                let isAfter20 = tanggal >= 21
-
+                                                let bgKelas = "bg-white hover:bg-stone-50 text-stone-700 border-stone-200"
                                                 if (shift) {
-                                                    if (shift.tipe === 'Pagi') {
-                                                        bgKelas = "shift-biru-pagi"
-                                                    } else if (shift.tipe === 'Sore') {
-                                                        bgKelas = "shift-kuning-sore"
-                                                    } else if (shift.tipe === 'Long') {
-                                                        bgKelas = "shift-api-long"
-                                                    } else if (shift.tipe === 'Libur') {
-                                                        bgKelas = "shift-dongker-off"
-                                                    }
+                                                    if (shift.tipe === 'Pagi') bgKelas = "shift-biru-pagi"
+                                                    else if (shift.tipe === 'Sore') bgKelas = "shift-kuning-sore"
+                                                    else if (shift.tipe === 'Long') bgKelas = "shift-api-long"
+                                                    else if (shift.tipe === 'Libur') bgKelas = "shift-dongker-off"
                                                 }
-
-                                                const sekarang = new Date()
-                                                const adalahHariIni = tahunAktif === sekarang.getFullYear() &&
-                                                    bulanAktif === sekarang.getMonth() &&
-                                                    tanggal === sekarang.getDate()
-
-                                                const adalahTutupBuku = tanggal === 20
-                                                const adalahGajian = tanggal === 25
 
                                                 return (
                                                     <button
                                                         key={tanggal}
-                                                        onClick={() => bukaFormShift(tanggal)}
-                                                        className={`rounded-xl p-1.5 flex flex-col justify-between items-start border transition-all text-left h-12 ${bgKelas} ${adalahHariIni ? 'ring-2 ring-amber-950' : ''} ${adalahTutupBuku ? 'ring-2 ring-amber-700 ring-offset-1' : ''} ${adalahGajian ? 'ring-2 ring-emerald-500 ring-offset-1' : ''} ${isAfter20 ? 'border-amber-300/50' : ''}`}
+                                                        onClick={() => bukaModalInput(tanggal)}
+                                                        className={`rounded-xl p-1.5 flex flex-col justify-between items-start border text-left transition focus:outline-none h-16 sm:h-20 text-xs relative overflow-hidden ${bgKelas} ${isToday ? 'ring-2 ring-amber-950 font-black shadow-sm' : ''} ${isAfter20 ? 'ring-1 ring-amber-400/60' : ''}`}
                                                     >
-                                                        <span className="text-[10px] font-bold opacity-90">{tanggal}</span>
-                                                        {shift && shift.tipe !== 'Libur' && (
-                                                            <span className="text-[9px] font-black uppercase tracking-tight block self-stretch text-center">
-                                                                {shift.tipe}
+                                                        <div className="w-full flex justify-between items-center">
+                                                            <span className={`font-bold ${isToday ? 'bg-amber-950 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]' : ''}`}>
+                                                                {tanggal}
                                                             </span>
+                                                            {isAfter20 && (
+                                                                <span className="text-[7px] text-amber-600 font-bold bg-amber-50 px-1 rounded border border-amber-200">
+                                                                    → next
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {shift && shift.tipe !== 'Libur' && (
+                                                            <div className="w-full">
+                                                                <span className="text-[9px] font-black uppercase block tracking-tight leading-none">
+                                                                    {shift.tipe}
+                                                                </span>
+                                                                <span className="text-[8px] font-bold block opacity-90 leading-tight">
+                                                                    Rp {(TARIF[shift.tipe]/1000)}k
+                                                                </span>
+                                                            </div>
                                                         )}
+
                                                         {shift && shift.tipe === 'Libur' && (
-                                                            <span className="text-[8px] opacity-80 italic block self-stretch text-center">Off</span>
-                                                        )}
-                                                        {!shift && adalahTutupBuku && (
-                                                            <span className="text-[6px] font-bold text-amber-700 block self-stretch text-center">📕</span>
-                                                        )}
-                                                        {!shift && adalahGajian && (
-                                                            <span className="text-[6px] font-bold text-emerald-600 block self-stretch text-center">💰</span>
-                                                        )}
-                                                        {isAfter20 && !shift && (
-                                                            <span className="text-[5px] text-amber-400 block self-stretch text-center">→ next</span>
+                                                            <span className="text-[9px] font-bold italic opacity-80 block leading-none">
+                                                                Off
+                                                            </span>
                                                         )}
                                                     </button>
                                                 )
                                             })}
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : tabAktif === 'perhitungan' ? (
+                            <div className="space-y-6">
+                                {/* Navigasi Periode Gajian Card */}
+                                <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                                    <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                                        <button
+                                            onClick={geserKiri}
+                                            className="p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition flex items-center gap-1 text-xs focus:outline-none"
+                                        >
+                                            ◀ <span className="hidden sm:inline">Gajian Sebelum</span>
+                                        </button>
 
-                                        <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-stone-500 border-t border-stone-100 pt-3">
-                                            <span className="flex items-center gap-1">
-                                                <span className="w-3 h-3 rounded border-2 border-amber-700 flex items-center justify-center text-[6px]">📕</span>
-                                                Tutup Buku (20)
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <span className="w-3 h-3 rounded border-2 border-emerald-500 flex items-center justify-center text-[6px]">💰</span>
-                                                Gajian (25)
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <span className="w-3 h-3 rounded bg-blue-600 border border-blue-700"></span>
-                                                Pagi
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <span className="w-3 h-3 rounded bg-yellow-400 border border-yellow-500"></span>
-                                                Sore
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <span className="w-3 h-3 rounded bg-gradient-to-r from-red-600 to-orange-500"></span>
-                                                Long
-                                            </span>
-                                            <span className="flex items-center gap-1 text-amber-600">
-                                                <span className="w-3 h-3 rounded border border-amber-400 flex items-center justify-center text-[6px]">→</span>
-                                                21+ masuk bulan berikutnya
-                                            </span>
+                                        <div className="text-center px-2">
+                                            <span className="text-[10px] text-amber-800 font-bold uppercase block tracking-wider">Periode Gajian Terpilih</span>
+                                            <h2 className="text-base font-black text-amber-950 m-0">Gajian 25 {daftarBulan[bulanAktif]} {tahunAktif}</h2>
+                                            <p className="text-[10px] text-stone-500 m-0 font-semibold">Cut-off 21 {daftarBulan[bulanSebelumIdx]} - 20 {daftarBulan[bulanAktif]}</p>
                                         </div>
+
+                                        <button
+                                            onClick={geserKanan}
+                                            className="p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition flex items-center gap-1 text-xs focus:outline-none"
+                                        >
+                                            <span className="hidden sm:inline">Gajian Berikut</span> ▶
+                                        </button>
                                     </div>
 
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200">
-                                        <h2 className="text-sm font-bold text-stone-800 mb-3">
-                                            Daftar Kerja Bulan {daftarBulan[bulanAktif]}
-                                        </h2>
+                                    <button
+                                        onClick={resetKeBulanSekarang}
+                                        className="bg-amber-950 hover:bg-amber-900 text-white font-bold text-xs py-2.5 px-3.5 rounded-xl shadow-xs transition flex items-center gap-1.5 focus:outline-none"
+                                    >
+                                        🔄 Gajian Sekarang
+                                    </button>
+                                </div>
 
-                                        {murni.rincian.length === 0 ? (
-                                            <p className="text-xs text-stone-400 italic text-center py-4 m-0">Tidak ada shift kerja terdaftar di bulan ini.</p>
-                                        ) : (
-                                            <div className="divide-y divide-stone-100 max-h-60 overflow-y-auto pr-2">
-                                                {murni.rincian.map((item, idx) => (
-                                                    <div key={idx} className="flex justify-between items-center text-xs py-2.5">
-                                                        <div>
-                                                            <span className="font-bold text-stone-800">{item.tanggal} {item.bulanGaji}</span>
-                                                            {item.catatan && <p className="text-[10px] text-stone-400 m-0 italic">"{item.catatan}"</p>}
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${item.tipe === 'Pagi' ? 'bg-blue-600 text-white' :
-                                                                    item.tipe === 'Sore' ? 'bg-yellow-400 text-stone-900' :
-                                                                        'bg-gradient-to-r from-red-600 to-orange-500 text-white'
-                                                                    }`}>
-                                                                {item.tipe}
-                                                            </span>
-                                                            <span className="font-bold text-stone-800">Rp {item.gaji.toLocaleString('id-ID')}</span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                {/* Visual 2 Bulan Kalender (Tutup Buku 21-20) */}
+                                <div className="space-y-4">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                        <h3 className="text-sm font-bold text-stone-850 m-0">
+                                            Visual Kalender 2 Bulan per Gajian (Cut-off 21 - 20)
+                                        </h3>
+                                        <button
+                                            onClick={bukaModalFilter}
+                                            className="bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold py-1.5 px-3 rounded-xl border border-amber-300 transition"
+                                        >
+                                            Filter Multi-Gajian ({daftarBulan[filterBulanMulai]} - {daftarBulan[filterBulanSelesai]})
+                                        </button>
                                     </div>
 
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-4">
+                                    {Array.from({ length: filterBulanSelesai - filterBulanMulai + 1 }).map((_, idx) => {
+                                        const bln = filterBulanMulai + idx
+                                        return renderDuaBulanGajian(filterTahun, bln)
+                                    })}
+                                </div>
+
+                                {/* Summary & All-Time Table */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-4 rounded-2xl text-white bg-amber-950 flex flex-col justify-between shadow-sm space-y-3">
                                         <div>
-                                            <h3 className="font-bold text-stone-800 text-sm">Pusat Data & Keamanan Cadangan</h3>
-                                            <p className="text-stone-400 text-[10px] m-0">Cadangkan seluruh data shift Anda secara mandiri agar aman dari penghapusan browser harian.</p>
+                                            <span className="text-[10px] bg-amber-800 text-amber-200 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                Total Gaji Range Terfilter
+                                            </span>
+                                            <span className="text-3xl font-black text-amber-300 block mt-2">
+                                                Rp {akumulasiFilter.total.toLocaleString('id-ID')}
+                                            </span>
+                                            <span className="text-[10px] text-amber-200/80 block mt-0.5">
+                                                Target Normal ({akumulasiFilter.totalHariPeriode} Hari): Rp {akumulasiFilter.targetGajiNormal.toLocaleString('id-ID')}
+                                            </span>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <button
-                                                onClick={eksporData}
-                                                className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 focus:outline-none shadow-sm"
-                                            >
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                </svg>
-                                                Unduh Cadangan
-                                            </button>
+                                        <div className="bg-amber-900/60 p-2.5 rounded-xl border border-amber-800 text-xs">
+                                            {akumulasiFilter.selisihGaji >= 0 ? (
+                                                <div className="text-emerald-300 font-bold text-[11px]">
+                                                    🟢 {akumulasiFilter.selisihGaji > 0 ? `Surplus +Rp ${akumulasiFilter.selisihGaji.toLocaleString('id-ID')}` : 'Gaji Normal Tercapai'}
+                                                </div>
+                                            ) : (
+                                                <div className="text-amber-200 text-[11px] font-semibold">
+                                                    🚨 Kurang <strong>{akumulasiFilter.kurangShift} Shift lagi</strong> untuk capai Gaji Normal Range
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
 
-                                            <input
-                                                type="file"
-                                                id="file-impor-json-local"
-                                                accept=".json"
-                                                onChange={imporData}
-                                                className="hidden"
-                                            />
-                                            <button
-                                                onClick={() => document.getElementById('file-impor-json-local').click()}
-                                                className="bg-stone-800 hover:bg-stone-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 focus:outline-none shadow-sm"
-                                            >
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                                </svg>
-                                                Muat Cadangan
-                                            </button>
+                                    <div className="p-4 rounded-2xl text-white bg-stone-900 flex flex-col justify-between shadow-sm space-y-3">
+                                        <div>
+                                            <span className="text-[10px] bg-stone-800 text-emerald-300 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                Semua Jadwal (All-Time)
+                                            </span>
+                                            <span className="text-3xl font-black text-emerald-400 block mt-2">
+                                                Rp {akumulasiSemua.total.toLocaleString('id-ID')}
+                                            </span>
+                                            <span className="text-[10px] text-stone-400 block mt-0.5">
+                                                Shift Masuk: {akumulasiSemua.pagi + akumulasiSemua.sore + akumulasiSemua.long}x | Off: {akumulasiSemua.libur}x
+                                            </span>
                                         </div>
 
-                                        <div className="border-t border-stone-100 pt-3 flex flex-col sm:flex-row justify-between items-center gap-2">
-                                            <span className="text-[10px] text-stone-400">Kosongkan seluruh data saat ini:</span>
-                                            <button
-                                                onClick={() => setTampilkanKonfirmasiKosongkan(true)}
-                                                className="bg-red-50 text-red-700 font-bold text-[10px] rounded-lg px-2.5 py-1 hover:bg-red-100 transition focus:outline-none"
-                                            >
-                                                Kosongkan Kalender
-                                            </button>
+                                        <div className="bg-stone-800/80 p-2.5 rounded-xl border border-stone-750 text-xs">
+                                            {akumulasiSemua.hutangLiburAllTime <= 0 ? (
+                                                <div className="text-emerald-400 font-bold text-[11px]">
+                                                    🟢 Hutang Libur All-Time Lunas {akumulasiSemua.hutangLiburAllTime < 0 ? `(Surplus ${Math.abs(akumulasiSemua.hutangLiburAllTime)} Shift)` : ''}
+                                                </div>
+                                            ) : (
+                                                <div className="text-amber-300 font-bold text-[11px]">
+                                                    🚨 Hutang Libur All-Time: {akumulasiSemua.hutangLiburAllTime} Shift belum diganti
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+                                    <div className="p-4 rounded-xl bg-stone-50 border border-stone-200">
+                                        <h4 className="text-sm font-bold text-stone-800 mb-2">Struktur Perhitungan Gaji Kumulatif</h4>
+                                        <p className="text-xs text-stone-500 mb-3">Akumulasi seluruh upah yang telah dimasukkan sejak pertama kali mencatat.</p>
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-xs border border-stone-200">
+                                                <thead className="bg-stone-800 text-white">
+                                                    <tr>
+                                                        <th className="p-2 border">Jenis Shift</th>
+                                                        <th className="p-2 border">Tarif</th>
+                                                        <th className="p-2 border">Metode Rumus</th>
+                                                        <th className="p-2 border">Total Masuk (Semua Bulan)</th>
+                                                        <th className="p-2 border">Total Pendapatan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-stone-200">
+                                                    <tr>
+                                                        <td className="p-2 border"><span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">Pagi</span></td>
+                                                        <td className="p-2 border">Rp 70.000</td>
+                                                        <td className="p-2 border">Masuk x Rp 70.000</td>
+                                                        <td className="p-2 border">{akumulasiSemua.pagi}x</td>
+                                                        <td className="p-2 border font-bold">Rp {(akumulasiSemua.pagi * 70000).toLocaleString('id-ID')}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="p-2 border"><span className="bg-yellow-400 text-stone-900 px-2 py-0.5 rounded text-[10px] font-bold">Sore</span></td>
+                                                        <td className="p-2 border">Rp 70.000</td>
+                                                        <td className="p-2 border">Masuk x Rp 70.000</td>
+                                                        <td className="p-2 border">{akumulasiSemua.sore}x</td>
+                                                        <td className="p-2 border font-bold">Rp {(akumulasiSemua.sore * 70000).toLocaleString('id-ID')}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="p-2 border"><span className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-2 py-0.5 rounded text-[10px] font-bold">Long Shift</span></td>
+                                                        <td className="p-2 border">Rp 140.000</td>
+                                                        <td className="p-2 border">Masuk x (Rp 70.000 x 2)</td>
+                                                        <td className="p-2 border">{akumulasiSemua.long}x</td>
+                                                        <td className="p-2 border font-bold">Rp {(akumulasiSemua.long * 140000).toLocaleString('id-ID')}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="p-2 border"><span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-bold">Libur / Off</span></td>
+                                                        <td className="p-2 border">Rp 0</td>
+                                                        <td className="p-2 border">Potong 1 Shift Normal (-70k)</td>
+                                                        <td className="p-2 border">{akumulasiSemua.libur}x</td>
+                                                        <td className="p-2 border font-bold text-slate-500">Rp 0</td>
+                                                    </tr>
+                                                    <tr className="bg-amber-50/70 font-semibold text-amber-950">
+                                                        <td className="p-2 border" colSpan="3">
+                                                            ⚖️ <strong>Status Gali-Tutup Libur (All-Time)</strong>: {akumulasiSemua.libur} Libur vs {akumulasiSemua.long} Long Shift
+                                                        </td>
+                                                        <td className="p-2 border" colSpan="2">
+                                                            {akumulasiSemua.hutangLiburAllTime <= 0 ? (
+                                                                <span className="text-emerald-700 font-bold">🟢 Hutang Libur Lunas</span>
+                                                            ) : (
+                                                                <span className="text-amber-800 font-bold">🚨 Masih Hutang {akumulasiSemua.hutangLiburAllTime} Shift</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-6">
-                                    <div className="bg-amber-900 text-white p-5 rounded-2xl shadow-md border border-amber-850 periode-tutup-buku">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="inline-block bg-amber-800 text-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                Sistem Tutup Buku
+                            /* Tab 3: Target & Ganti Libur */
+                            <div className="space-y-6">
+                                {/* Header Navigasi Periode */}
+                                <div className="bg-amber-950 text-white p-6 rounded-2xl shadow-md space-y-4">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-amber-800/80 pb-4">
+                                        <div>
+                                            <span className="inline-block bg-amber-800 text-amber-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider mb-1">
+                                                Dashboard Target & Ganti Libur
                                             </span>
-                                            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${gajianLunas ? 'bg-emerald-500 text-white shadow-sm' : 'bg-red-500 text-white'}`}>
-                                                {gajianLunas ? 'LUNAS' : 'BELUM CAIR'}
-                                            </span>
-                                        </div>
-
-                                        <div className="bg-amber-800/50 rounded-xl p-3 mb-3 border border-amber-700/50">
-                                            <p className="text-[11px] font-bold text-amber-200 m-0">Periode Kerja (Tutup Buku)</p>
-                                            <p className="text-base font-black text-white m-0">
-                                                {tutupBuku.labelPeriode}
-                                            </p>
-                                            <div className="flex gap-3 mt-1 text-[10px] text-amber-300/80">
-                                                <span>📅 Mulai: {tutupBuku.tglMulai.toLocaleDateString('id-ID')}</span>
-                                                <span>📅 Akhir: {tutupBuku.tglAkhir.toLocaleDateString('id-ID')}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-emerald-800/40 rounded-xl p-2.5 mb-3 border border-emerald-700/50 text-center">
-                                            <p className="text-[10px] text-emerald-300 m-0">💰 Tanggal Gajian</p>
-                                            <p className="text-sm font-bold text-emerald-200 m-0">{tutupBuku.labelGajian}</p>
-                                            <p className="text-[9px] text-emerald-300/70 m-0">
-                                                {tutupBuku.tglGajian.toLocaleDateString('id-ID', { weekday: 'long' })}
+                                            <h2 className="text-xl font-black text-white m-0">
+                                                Gajian 25 {daftarBulan[bulanAktif]} {tahunAktif}
+                                            </h2>
+                                            <p className="text-xs text-amber-200/80 m-0">
+                                                Periode Cut-off: 21 {daftarBulan[bulanSebelumIdx]} - 20 {daftarBulan[bulanAktif]} ({tutupBuku.totalHariPeriode} Hari)
                                             </p>
                                         </div>
-
-                                        <div className="border-t border-amber-800/60 pt-3 flex flex-col gap-3">
-                                            <div>
-                                                <div className="flex justify-between items-baseline mb-1">
-                                                    <span className="text-xs text-amber-300 block">Total Gaji Terkumpul</span>
-                                                    <span className="text-[10px] text-amber-300/80">Target Normal: Rp {tutupBuku.targetGajiNormal.toLocaleString('id-ID')}</span>
-                                                </div>
-                                                <span className="text-2xl font-black text-amber-200">
-                                                    Rp {tutupBuku.total.toLocaleString('id-ID')}
-                                                </span>
-                                            </div>
-
-                                            <div>
-                                                <div className="flex justify-between text-[10px] text-amber-200/90 mb-1">
-                                                    <span>Progres Target Gaji Normal ({tutupBuku.totalHariPeriode} Hari)</span>
-                                                    <span className="font-bold">{tutupBuku.persentaseTarget}%</span>
-                                                </div>
-                                                <div className="w-full bg-amber-950/60 h-2.5 rounded-full overflow-hidden border border-amber-800">
-                                                    <div
-                                                        className={`h-full transition-all ${tutupBuku.persentaseTarget >= 100 ? 'bg-emerald-400' : 'bg-amber-400'}`}
-                                                        style={{ width: `${tutupBuku.persentaseTarget}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-4 gap-1.5 text-xs">
-                                                <div className="bg-blue-600/30 rounded-lg p-2 text-center border border-blue-500/30">
-                                                    <span className="text-blue-200 block text-[9px]">Pagi</span>
-                                                    <span className="text-white font-bold">{tutupBuku.pagi}x</span>
-                                                </div>
-                                                <div className="bg-yellow-600/30 rounded-lg p-2 text-center border border-yellow-500/30">
-                                                    <span className="text-yellow-200 block text-[9px]">Sore</span>
-                                                    <span className="text-white font-bold">{tutupBuku.sore}x</span>
-                                                </div>
-                                                <div className="bg-red-600/30 rounded-lg p-2 text-center border border-red-500/30">
-                                                    <span className="text-red-200 block text-[9px]">Long</span>
-                                                    <span className="text-white font-bold">{tutupBuku.long}x</span>
-                                                </div>
-                                                <div className="bg-slate-800/40 rounded-lg p-2 text-center border border-slate-700/40">
-                                                    <span className="text-slate-300 block text-[9px]">Off</span>
-                                                    <span className="text-white font-bold">{tutupBuku.libur}x</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-amber-950/80 p-3 rounded-xl border border-amber-800/80 space-y-2 text-xs">
-                                                <div className="flex justify-between items-center border-b border-amber-800/60 pb-1.5">
-                                                    <span className="font-bold text-amber-200 text-[11px]">📅 Contribusi 2 Bulan (Periode Tutup Buku)</span>
-                                                    <span className="text-[9px] text-amber-300/70">Gajian {tutupBuku.labelGajian}</span>
-                                                </div>
-
-                                                <div className="space-y-1.5 text-[10px]">
-                                                    <div className="flex justify-between items-center bg-amber-900/50 p-2 rounded-lg border border-amber-800/50">
-                                                        <div>
-                                                            <span className="font-bold text-amber-200 block">1. {tutupBuku.bulan1.namaBulan}</span>
-                                                            <span className="text-amber-300/70 text-[9px]">{tutupBuku.bulan1.labelRange}</span>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <span className="font-bold text-white block">Rp {tutupBuku.bulan1.total.toLocaleString('id-ID')}</span>
-                                                            <span className="text-amber-300/70 text-[9px]">{tutupBuku.bulan1.shiftCount} Shift ({tutupBuku.bulan1.pagi}P/{tutupBuku.bulan1.sore}S/{tutupBuku.bulan1.long}L)</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex justify-between items-center bg-amber-900/50 p-2 rounded-lg border border-amber-800/50">
-                                                        <div>
-                                                            <span className="font-bold text-amber-200 block">2. {tutupBuku.bulan2.namaBulan}</span>
-                                                            <span className="text-amber-300/70 text-[9px]">{tutupBuku.bulan2.labelRange}</span>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <span className="font-bold text-white block">Rp {tutupBuku.bulan2.total.toLocaleString('id-ID')}</span>
-                                                            <span className="text-amber-300/70 text-[9px]">{tutupBuku.bulan2.shiftCount} Shift ({tutupBuku.bulan2.pagi}P/{tutupBuku.bulan2.sore}S/{tutupBuku.bulan2.long}L)</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-amber-950/70 p-3 rounded-xl border border-amber-800/80 text-xs space-y-2">
-                                                <div className="flex justify-between items-center border-b border-amber-800/60 pb-1.5">
-                                                    <span className="font-bold text-amber-200 text-[11px]">⚖️ Evaluasi Ganti Libur (Gali-Tutup)</span>
-                                                    <span className="text-[9px] text-amber-300/70">Cut-off 21 - 20</span>
-                                                </div>
-                                                <div>
-                                                    {tutupBuku.selisihGaji >= 0 ? (
-                                                        <div className="bg-emerald-900/60 p-2 rounded-lg border border-emerald-700/50 text-[10px] text-emerald-200 font-bold text-center">
-                                                            🟢 {tutupBuku.selisihGaji > 0 ? `Gaji Surplus (+Rp ${tutupBuku.selisihGaji.toLocaleString('id-ID')})` : 'Gaji Normal Tercapai / Full!'}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="bg-amber-900/80 p-2 rounded-lg border border-amber-700/70 text-[10px] text-amber-100 space-y-1">
-                                                            <div className="font-bold flex items-center gap-1 text-amber-300">
-                                                                <span>🚨</span>
-                                                                <span>Kurang {tutupBuku.kurangShift} Shift lagi</span>
-                                                            </div>
-                                                            <p className="m-0 text-[9px] text-amber-200/90 leading-tight">
-                                                                Dapat dipenuhi dengan {tutupBuku.kurangShift}x Shift Biasa (Pagi/Sore) atau {tutupBuku.kurangShift}x Long Shift sebelum Tutup Buku (Tgl 20).
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                onClick={() => {
-                                                    const baru = { ...statusGaji, [keyGajiPeriod]: !gajianLunas }
-                                                    setStatusGaji(baru)
-                                                    pemicuNotifikasi(`Gaji ${tutupBuku.labelGajian} diubah menjadi ${!gajianLunas ? 'LUNAS' : 'BELUM CAIR'}`)
-                                                }}
-                                                className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 focus:outline-none border ${gajianLunas ?
-                                                        'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500' :
-                                                        'bg-amber-950 text-amber-200 border-amber-800 hover:bg-amber-900'
-                                                    }`}
-                                            >
-                                                <span className="w-2 h-2 rounded-full bg-current"></span>
-                                                {gajianLunas ? 'Ubah Status Jadi Belum Cair' : 'Tandai Sudah Diterima (Lunas)'}
-                                            </button>
-
-                                            <button
-                                                onClick={() => bukaModalLaporan('tutupBuku')}
-                                                className="w-full bg-amber-850 hover:bg-amber-800 text-amber-200 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 border border-amber-800 focus:outline-none"
-                                            >
-                                                Kirim Laporan Kerja
-                                            </button>
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={geserKiri} className="p-2 rounded-xl bg-amber-900 hover:bg-amber-850 text-amber-200 text-xs font-bold transition">◀</button>
+                                            <button onClick={geserKanan} className="p-2 rounded-xl bg-amber-900 hover:bg-amber-850 text-amber-200 text-xs font-bold transition">▶</button>
                                         </div>
                                     </div>
 
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200">
-                                        <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Aturan Gaji Nescafe</h4>
-                                        <p className="text-[10px] text-stone-500 mb-3">Sistem upah harian otomatis flat berdasarkan tipe kehadiran shift kerja.</p>
-
-                                        <div className="space-y-2 text-xs">
-                                            <div className="flex justify-between p-2 rounded-lg bg-stone-50 border border-stone-150">
-                                                <span className="font-semibold text-stone-700">Pagi (07:00 - 15:00)</span>
-                                                <span className="font-bold text-blue-600">Rp 70.000</span>
-                                            </div>
-                                            <div className="flex justify-between p-2 rounded-lg bg-stone-50 border border-stone-150">
-                                                <span className="font-semibold text-stone-700">Sore (15:00 - 23:00)</span>
-                                                <span className="font-bold text-yellow-600">Rp 70.000</span>
-                                            </div>
-                                            <div className="flex justify-between p-2 rounded-lg bg-stone-50 border border-stone-150">
-                                                <span className="font-semibold text-stone-700">Long (07:00 - 23:00)</span>
-                                                <span className="font-bold text-red-600">Rp 140.000</span>
-                                            </div>
+                                    {/* Main Target Card */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="bg-amber-900/60 p-4 rounded-xl border border-amber-800 text-center">
+                                            <span className="text-[10px] text-amber-300 uppercase font-bold block">Target Gaji Normal</span>
+                                            <span className="text-2xl font-black text-amber-200">Rp {tutupBuku.targetGajiNormal.toLocaleString('id-ID')}</span>
+                                            <span className="text-[9px] text-amber-300/70 block mt-1">{tutupBuku.totalHariPeriode} Hari x Rp 70.000</span>
                                         </div>
-
-                                        <div className="mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200 text-[10px] text-amber-800">
-                                            <p className="m-0 font-semibold">📌 Sistem Perhitungan:</p>
-                                            <p className="m-0 text-amber-700">Periode tutup buku: <strong>21 - 20</strong> (setiap bulan)</p>
-                                            <p className="m-0 text-amber-700">Tanggal gajian: <strong>25</strong> setiap bulan</p>
-                                            <p className="m-0 text-amber-700 text-[9px] mt-1">⚠️ Tanggal 21 masuk ke periode bulan berikutnya</p>
+                                        <div className="bg-amber-900/60 p-4 rounded-xl border border-amber-800 text-center">
+                                            <span className="text-[10px] text-amber-300 uppercase font-bold block">Upah Terkumpul Saat Ini</span>
+                                            <span className="text-2xl font-black text-white">Rp {tutupBuku.total.toLocaleString('id-ID')}</span>
+                                            <span className="text-[9px] text-amber-300/70 block mt-1">Progres: {tutupBuku.persentaseTarget}%</span>
+                                        </div>
+                                        <div className="bg-amber-900/60 p-4 rounded-xl border border-amber-800 text-center">
+                                            <span className="text-[10px] text-amber-300 uppercase font-bold block">Status Ganti Libur</span>
+                                            {tutupBuku.selisihGaji >= 0 ? (
+                                                <span className="text-lg font-black text-emerald-300 block mt-1">🟢 Normal / Surplus</span>
+                                            ) : (
+                                                <span className="text-lg font-black text-amber-300 block mt-1">🚨 Defisit {tutupBuku.kurangShift} Shift</span>
+                                            )}
+                                            <span className="text-[9px] text-amber-300/70 block mt-1">
+                                                {tutupBuku.selisihGaji >= 0 ? `+Rp ${tutupBuku.selisihGaji.toLocaleString('id-ID')}` : `-Rp ${Math.abs(tutupBuku.selisihGaji).toLocaleString('id-ID')}`}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="md:col-span-2 space-y-6">
-                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 border-b border-stone-100 pb-4">
-                                            <div>
-                                                <h2 className="text-base font-bold text-stone-850">Filter Range Bulan & Tahun</h2>
-                                                <p className="text-xs text-stone-400">Klik setiap pilihan untuk mengubah filter</p>
+                                {/* Panduan Penebusan Shift */}
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 space-y-4">
+                                    <h3 className="text-sm font-bold text-stone-850 m-0 flex items-center gap-2">
+                                        <span>⚖️</span>
+                                        <span>Rekomendasi Penebusan Shift ("Gali Lubang-Tutup Lubang")</span>
+                                    </h3>
+
+                                    {tutupBuku.selisihGaji >= 0 ? (
+                                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-emerald-900 text-xs space-y-1">
+                                            <p className="font-bold m-0 text-sm">🎉 Target Gaji Normal Sudah Tercapai!</p>
+                                            <p className="m-0">Upah terkumpul Anda (Rp {tutupBuku.total.toLocaleString('id-ID')}) sudah mencapai atau melebihi Target Gaji Normal (Rp {tutupBuku.targetGajiNormal.toLocaleString('id-ID')}). Anda tidak memiliki kekurangan shift untuk gajian tanggal 25 {daftarBulan[bulanAktif]}.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-950 text-xs space-y-3">
+                                            <div className="font-bold text-sm text-amber-900 flex items-center gap-1.5">
+                                                <span>🚨</span>
+                                                <span>Anda Kekurangan {tutupBuku.kurangShift} Shift (Defisit Rp {Math.abs(tutupBuku.selisihGaji).toLocaleString('id-ID')})</span>
                                             </div>
-                                            <div className="flex gap-2">
+                                            <p className="m-0 text-amber-800">
+                                                Agar gaji Anda pada tanggal 25 {daftarBulan[bulanAktif]} mencapai Target Normal (Rp {tutupBuku.targetGajiNormal.toLocaleString('id-ID')}), Anda dapat memilih salah satu dari 2 cara penebusan ringan berikut sebelum tanggal 20:
+                                            </p>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                                <div className="bg-white p-3.5 rounded-xl border border-amber-300 shadow-xs">
+                                                    <span className="font-bold text-blue-700 block text-xs mb-1">📌 Opsi A: Shift Biasa (Pagi / Sore)</span>
+                                                    <p className="text-[11px] text-stone-600 m-0">
+                                                        Masuk <strong>{tutupBuku.kurangShift} hari Shift Biasa</strong> di hari yang tadinya libur (Tarif Rp 70.000/shift).
+                                                    </p>
+                                                </div>
+                                                <div className="bg-white p-3.5 rounded-xl border border-amber-300 shadow-xs">
+                                                    <span className="font-bold text-red-600 block text-xs mb-1">📌 Opsi B: Long Shift</span>
+                                                    <p className="text-[11px] text-stone-600 m-0">
+                                                        Jalani <strong>{tutupBuku.kurangShift} hari Long Shift</strong> pada hari kerja biasa (Tarif Rp 140.000/shift).
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Simulator Penebusan Shift Interaktif */}
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 space-y-4">
+                                    <div className="border-b border-stone-150 pb-3">
+                                        <h3 className="text-sm font-bold text-stone-850 m-0">
+                                            🧮 Simulator Penebusan Shift Interaktif
+                                        </h3>
+                                        <p className="text-xs text-stone-400 m-0 mt-0.5">
+                                            Uji coba penambahan shift tambahan sebelum tanggal 20 untuk melihat estimasi gajian Anda.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                                        <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+                                            <span className="font-bold text-stone-700 block">1. Tambah Shift Biasa (Pagi/Sore - Rp 70.000)</span>
+                                            <div className="flex items-center gap-3">
                                                 <button
-                                                    onClick={resetFilter}
-                                                    className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm"
-                                                >
-                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                    </svg>
-                                                    Reset ke Bulan Ini
-                                                </button>
+                                                    onClick={() => setSimulasiBiasa(prev => Math.max(0, prev - 1))}
+                                                    className="w-8 h-8 rounded-lg bg-stone-200 text-stone-800 font-bold hover:bg-stone-300"
+                                                >-</button>
+                                                <span className="text-base font-black text-blue-700">{simulasiBiasa} Shift</span>
+                                                <button
+                                                    onClick={() => setSimulasiBiasa(prev => prev + 1)}
+                                                    className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700"
+                                                >+</button>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-3 gap-3 mb-4">
-                                            <button
-                                                onClick={bukaModalTahun}
-                                                className="bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl p-3 text-center transition"
-                                            >
-                                                <span className="text-[10px] text-stone-500 block">Tahun</span>
-                                                <span className="text-sm font-bold text-amber-950">{filterTahun}</span>
-                                                <span className="text-[8px] text-stone-400 block">▼ klik ubah</span>
-                                            </button>
-
-                                            <button
-                                                onClick={bukaModalBulanMulai}
-                                                className="bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-xl p-3 text-center transition"
-                                            >
-                                                <span className="text-[10px] text-stone-500 block">Bulan Mulai</span>
-                                                <span className="text-sm font-bold text-blue-700">{daftarBulan[filterBulanMulai]}</span>
-                                                <span className="text-[8px] text-stone-400 block">▼ klik ubah</span>
-                                            </button>
-
-                                            <button
-                                                onClick={bukaModalBulanSelesai}
-                                                className="bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-xl p-3 text-center transition"
-                                            >
-                                                <span className="text-[10px] text-stone-500 block">Bulan Selesai</span>
-                                                <span className="text-sm font-bold text-green-700">{daftarBulan[filterBulanSelesai]}</span>
-                                                <span className="text-[8px] text-stone-400 block">▼ klik ubah</span>
-                                            </button>
-                                        </div>
-
-                                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-900 text-center">
-                                            <span className="font-bold">Filter aktif:</span> {daftarBulan[filterBulanMulai]} - {daftarBulan[filterBulanSelesai]} {filterTahun}
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                            <div className="p-4 rounded-2xl text-white bg-amber-950 flex flex-col justify-between shadow-sm space-y-3">
-                                                <div>
-                                                    <span className="text-[10px] bg-amber-800 text-amber-200 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                        Total Gaji Range Terfilter
-                                                    </span>
-                                                    <span className="text-3xl font-black text-amber-300 block mt-2">
-                                                        Rp {akumulasiFilter.total.toLocaleString('id-ID')}
-                                                    </span>
-                                                    <span className="text-[10px] text-amber-200/80 block mt-0.5">
-                                                        Target Normal ({akumulasiFilter.totalHariPeriode} Hari): Rp {akumulasiFilter.targetGajiNormal.toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
-
-                                                <div className="bg-amber-900/60 p-2.5 rounded-xl border border-amber-800 text-xs">
-                                                    {akumulasiFilter.selisihGaji >= 0 ? (
-                                                        <div className="text-emerald-300 font-bold text-[11px]">
-                                                            🟢 {akumulasiFilter.selisihGaji > 0 ? `Surplus +Rp ${akumulasiFilter.selisihGaji.toLocaleString('id-ID')}` : 'Gaji Normal Tercapai'}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="text-amber-200 text-[11px] font-semibold">
-                                                            🚨 Kurang <strong>{akumulasiFilter.kurangShift}x Long Shift</strong> lagi untuk capai Gaji Normal Range
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="p-4 rounded-2xl text-white bg-stone-900 flex flex-col justify-between shadow-sm space-y-3">
-                                                <div>
-                                                    <span className="text-[10px] bg-stone-800 text-emerald-300 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                        Semua Jadwal (All-Time)
-                                                    </span>
-                                                    <span className="text-3xl font-black text-emerald-400 block mt-2">
-                                                        Rp {akumulasiSemua.total.toLocaleString('id-ID')}
-                                                    </span>
-                                                    <span className="text-[10px] text-stone-400 block mt-0.5">
-                                                        Shift Masuk: {akumulasiSemua.pagi + akumulasiSemua.sore + akumulasiSemua.long}x | Off: {akumulasiSemua.libur}x
-                                                    </span>
-                                                </div>
-
-                                                <div className="bg-stone-800/80 p-2.5 rounded-xl border border-stone-750 text-xs">
-                                                    {akumulasiSemua.hutangLiburAllTime <= 0 ? (
-                                                        <div className="text-emerald-400 font-bold text-[11px]">
-                                                            🟢 Hutang Libur All-Time Lunas {akumulasiSemua.hutangLiburAllTime < 0 ? `(Surplus ${Math.abs(akumulasiSemua.hutangLiburAllTime)} Long Shift)` : ''}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="text-amber-300 font-bold text-[11px]">
-                                                            🚨 Hutang Libur All-Time: {akumulasiSemua.hutangLiburAllTime} Shift belum diganti Long Shift
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-6 text-xs flex justify-around text-stone-700 font-semibold">
-                                            <span>Pagi: <strong className="text-blue-600">{akumulasiFilter.pagi}x</strong></span>
-                                            <span>Sore: <strong className="text-yellow-600">{akumulasiFilter.sore}x</strong></span>
-                                            <span>Long: <strong className="text-red-600">{akumulasiFilter.long}x</strong></span>
-                                            <span>Off: <strong className="text-slate-700">{akumulasiFilter.libur}x</strong></span>
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">
-                                                Kalender Bulan Terfilter
-                                            </h4>
-
-                                            <div className="grid grid-cols-1 gap-6">
-                                                {Array.from({ length: filterBulanSelesai - filterBulanMulai + 1 }).map((_, idx) => {
-                                                    const bln = filterBulanMulai + idx
-                                                    return renderKalenderFilterBulan(filterTahun, bln)
-                                                })}
+                                        <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+                                            <span className="font-bold text-stone-700 block">2. Tambah Long Shift (Rp 140.000 / +70k ekstra)</span>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => setSimulasiLong(prev => Math.max(0, prev - 1))}
+                                                    className="w-8 h-8 rounded-lg bg-stone-200 text-stone-800 font-bold hover:bg-stone-300"
+                                                >-</button>
+                                                <span className="text-base font-black text-red-600">{simulasiLong} Long Shift</span>
+                                                <button
+                                                    onClick={() => setSimulasiLong(prev => prev + 1)}
+                                                    className="w-8 h-8 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700"
+                                                >+</button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
-                                        <div className="p-4 rounded-xl bg-stone-50 border border-stone-200">
-                                            <h4 className="text-sm font-bold text-stone-800 mb-2">Struktur Perhitungan Gaji Kumulatif</h4>
-                                            <p className="text-xs text-stone-500 mb-3">Akumulasi seluruh upah yang telah dimasukkan sejak pertama kali mencatat.</p>
+                                    {/* Hasil Simulasi */}
+                                    {(() => {
+                                        const tambahanGaji = (simulasiBiasa * 70000) + (simulasiLong * 70000)
+                                        const estimasiGaji = tutupBuku.total + tambahanGaji
+                                        const estimasiSelisih = estimasiGaji - tutupBuku.targetGajiNormal
 
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-left text-xs border border-stone-200">
-                                                    <thead className="bg-stone-800 text-white">
-                                                        <tr>
-                                                            <th className="p-2 border">Jenis Shift</th>
-                                                            <th className="p-2 border">Tarif</th>
-                                                            <th className="p-2 border">Metode Rumus</th>
-                                                            <th className="p-2 border">Total Masuk (Semua Bulan)</th>
-                                                            <th className="p-2 border">Total Pendapatan</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-stone-200">
-                                                        <tr>
-                                                            <td className="p-2 border"><span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">Pagi</span></td>
-                                                            <td className="p-2 border">Rp 70.000</td>
-                                                            <td className="p-2 border">Masuk x Rp 70.000</td>
-                                                            <td className="p-2 border">{akumulasiSemua.pagi}x</td>
-                                                            <td className="p-2 border font-bold">Rp {(akumulasiSemua.pagi * 70000).toLocaleString('id-ID')}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td className="p-2 border"><span className="bg-yellow-400 text-stone-900 px-2 py-0.5 rounded text-[10px] font-bold">Sore</span></td>
-                                                            <td className="p-2 border">Rp 70.000</td>
-                                                            <td className="p-2 border">Masuk x Rp 70.000</td>
-                                                            <td className="p-2 border">{akumulasiSemua.sore}x</td>
-                                                            <td className="p-2 border font-bold">Rp {(akumulasiSemua.sore * 70000).toLocaleString('id-ID')}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td className="p-2 border"><span className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-2 py-0.5 rounded text-[10px] font-bold">Long Shift</span></td>
-                                                            <td className="p-2 border">Rp 140.000</td>
-                                                            <td className="p-2 border">Masuk x (Rp 70.000 x 2)</td>
-                                                            <td className="p-2 border">{akumulasiSemua.long}x</td>
-                                                            <td className="p-2 border font-bold">Rp {(akumulasiSemua.long * 140000).toLocaleString('id-ID')}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td className="p-2 border"><span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-bold">Libur / Off</span></td>
-                                                            <td className="p-2 border">Rp 0</td>
-                                                            <td className="p-2 border">Potong 1 Shift Normal (-70k)</td>
-                                                            <td className="p-2 border">{akumulasiSemua.libur}x</td>
-                                                            <td className="p-2 border font-bold text-slate-500">Rp 0</td>
-                                                        </tr>
-                                                        <tr className="bg-amber-50/70 font-semibold text-amber-950">
-                                                            <td className="p-2 border" colSpan="3">
-                                                                ⚖️ <strong>Status Gali-Tutup Libur (All-Time)</strong>: {akumulasiSemua.libur} Libur vs {akumulasiSemua.long} Long Shift
-                                                            </td>
-                                                            <td className="p-2 border" colSpan="2">
-                                                                {akumulasiSemua.hutangLiburAllTime <= 0 ? (
-                                                                    <span className="text-emerald-700 font-bold">🟢 Hutang Libur Lunas</span>
-                                                                ) : (
-                                                                    <span className="text-amber-800 font-bold">🚨 Masih Hutang {akumulasiSemua.hutangLiburAllTime} Long Shift</span>
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
+                                        return (
+                                            <div className="bg-amber-950 text-white p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-3">
+                                                <div>
+                                                    <span className="text-[10px] text-amber-300 font-bold uppercase block">Hasil Simulasi Gajian 25 {daftarBulan[bulanAktif]}</span>
+                                                    <span className="text-2xl font-black text-amber-200">Rp {estimasiGaji.toLocaleString('id-ID')}</span>
+                                                    <span className="text-[10px] text-amber-300/80 block">Target: Rp {tutupBuku.targetGajiNormal.toLocaleString('id-ID')}</span>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    {estimasiSelisih >= 0 ? (
+                                                        <span className="bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg inline-block">
+                                                            🟢 Target Normal Tercapai {estimasiSelisih > 0 ? `(+Rp ${estimasiSelisih.toLocaleString('id-ID')})` : ''}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg inline-block">
+                                                            🚨 Kurang Rp {Math.abs(estimasiSelisih).toLocaleString('id-ID')} ({Math.ceil(Math.abs(estimasiSelisih)/70000)} Shift lagi)
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
+                                        )
+                                    })()}
                                 </div>
                             </div>
                         )}
