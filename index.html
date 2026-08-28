@@ -174,6 +174,8 @@
             }
 
             const geserKiri = () => {
+                setSimulasiBiasa(0)
+                setSimulasiLong(0)
                 if (bulanAktif === 0) {
                     setBulanAktif(11)
                     setTahunAktif(prev => prev - 1)
@@ -183,6 +185,8 @@
             }
 
             const geserKanan = () => {
+                setSimulasiBiasa(0)
+                setSimulasiLong(0)
                 if (bulanAktif === 11) {
                     setBulanAktif(0)
                     setTahunAktif(prev => prev + 1)
@@ -192,20 +196,14 @@
             }
 
             const resetKeBulanSekarang = () => {
+                setSimulasiBiasa(0)
+                setSimulasiLong(0)
                 const sekarang = new Date()
-                let bln = sekarang.getMonth()
-                let thn = sekarang.getFullYear()
-                if (sekarang.getDate() > 20) {
-                    if (bln === 11) {
-                        bln = 0
-                        thn = thn + 1
-                    } else {
-                        bln = bln + 1
-                    }
-                }
+                const bln = sekarang.getMonth()
+                const thn = sekarang.getFullYear()
                 setBulanAktif(bln)
                 setTahunAktif(thn)
-                pemicuNotifikasi(`Periode direset ke Gajian 25 ${daftarBulan[bln]} ${thn}`)
+                pemicuNotifikasi(`Kalender direset ke bulan saat ini: ${daftarBulan[bln]} ${thn}`)
             }
 
             const jumlahHari = new Date(tahunAktif, bulanAktif + 1, 0).getDate()
